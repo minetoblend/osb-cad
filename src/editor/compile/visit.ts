@@ -80,7 +80,7 @@ export function createExpressionVisitor(attributes: Set<string>, dependencies: S
 
 export function createCodeBlockVisitor(attributes: Set<string>, dependencies: Set<ExpressionDependency>, builtinMethods: Set<string>): Visitor {
     return {
-        Identifier: path => visitIdentifier(path, false, dependencies, attributes),
+        Identifier: path => visitIdentifier(path, true, dependencies, attributes),
         CallExpression: path => visitCallExpression(path, builtinMethods)
     }
 }
