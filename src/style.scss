@@ -1,0 +1,27 @@
+
+
+
+.editor-pane {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+
+.splitpanes {
+  background: transparent !important;
+}
+
+.splitpanes__pane {
+  background: #121212 !important;
+}
+
+.splitpanes--vertical > .splitpanes__splitter {
+  min-width: 4px;
+  background: #414243 !important;
+}
+
+.splitpanes--horizontal > .splitpanes__splitter {
+  min-height: 4px;
+  background: #414243 !important;
+}

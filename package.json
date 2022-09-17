@@ -2,20 +2,47 @@
   "name": "osbcad",
   "version": "0.1.0",
   "private": true,
+  "main": "main.js",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "build:wasm": "cd kernel && wasm-pack build --target web --out-dir pkg",
+    "start": "electron ."
   },
   "dependencies": {
+    "@babel/core": "^7.19.1",
+    "@codemirror/lang-javascript": "^6.0.2",
+    "@codemirror/theme-one-dark": "^6.1.0",
+    "@fortawesome/fontawesome-svg-core": "^6.2.0",
+    "@fortawesome/free-regular-svg-icons": "^6.2.0",
+    "@fortawesome/free-solid-svg-icons": "^6.2.0",
+    "@fortawesome/vue-fontawesome": "^3.0.1",
+    "@types/babel__core": "^7.1.19",
+    "@types/splitpanes": "^2.2.1",
+    "@types/uuid": "^8.3.4",
+    "assert": "^2.0.0",
+    "codemirror": "^6.0.1",
     "core-js": "^3.8.3",
-    "vue": "^3.2.13"
+    "electron": "^20.1.4",
+    "element-plus": "^2.2.17",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "splitpanes": "^3.1.1",
+    "uuid": "^9.0.0",
+    "vfonts": "^0.0.3",
+    "vue": "^3.2.13",
+    "vue-codemirror": "^6.1.1"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-typescript": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
+    "assemblyscript": "0.21.3",
     "sass": "^1.32.7",
     "sass-loader": "^12.0.0",
-    "typescript": "~4.5.5"
+    "typescript": "~4.5.5",
+    "unplugin-auto-import": "^0.11.2",
+    "unplugin-vue-components": "^0.22.7",
+    "webpack": "^5.74.0"
   }
 }
