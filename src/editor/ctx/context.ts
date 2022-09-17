@@ -24,12 +24,12 @@ export class EditorContext {
         let rootNode = new SpriteWrangleNode(this)
         rootNode.position.value.set(300, 300)
         rootNode.name.value = 'SpriteWrangle4'
-        rootNode.inputs[0].multiple = true
+
         this.root.add(
             rootNode
         )
 
-        for(let i = 0; i < 32; i++) {
+        for (let i = 0; i < 4; i++) {
             let node = new SpriteWrangleNode(this)
             node.position.value.set(20 + 150 * i, 150)
             node.name.value = 'Node' + (i + 1)
@@ -37,19 +37,9 @@ export class EditorContext {
             this.root.add(
                 node
             )
-            this.root.addConnection(
-                node.outputs[0],
-                rootNode.inputs[0]
-            )
+
         }
 
-
-
-
-
-
-
-        ///this.root.outputNode.value = node2.name.value
     }
 
     setupEvents() {
