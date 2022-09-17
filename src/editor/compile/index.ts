@@ -5,6 +5,60 @@ import {createCodeBlockVisitor, createExpressionVisitor} from "@/editor/compile/
 import {lerp, Vec2} from "@/util/math";
 
 
+const globalFunctions: GlobalFunctions = {
+    cos: Math.cos,
+    sin: Math.sin,
+    tan: Math.atan,
+    acos: Math.acos,
+    asin: Math.asin,
+    atan: Math.atan,
+    atan2: Math.atan2,
+    floor: Math.floor,
+    ceil: Math.ceil,
+    round: Math.round,
+    lerp,
+    lerpv: (a: Vec2, b: Vec2, f: number) => new Vec2(
+        a.x + (b.x - a.x) * f,
+        a.y + (b.y - a.y) * f,
+    )
+}
+
+export interface GlobalFunctions {
+    cos(x: number): number
+
+    sin(x: number): number
+
+    tan(x: number): number
+
+    acos(x: number): number
+
+    asin(x: number): number
+
+    atan(x: number): number
+
+    atan2(y: number, x: number): number
+
+    floor(x: number): number
+
+    ceil(x: number): number
+
+    round(x: number): number
+
+    lerp(a: number, b: number, f: number): number
+
+    lerpv(a: Vec2, b: Vec2, f: number): Vec2
+}
+
+export const builtinExpressionMethods = new Set<string>([
+    ...Object.keys(globalFunctions),
+    'getAttrib',
+])
+
+export const builtinStatementMethods = new Set<string>([
+    ...builtinExpressionMethods,
+    'setAttrib',
+])
+
 export function compileStatements(code: string) {
     const attributes = new Set<string>()
     const dependencies = new Set<ExpressionDependency>()
@@ -21,9 +75,7 @@ export function compileStatements(code: string) {
     return new CompiledCodeBlock(compiledFunction, attributes, dependencies)
 }
 
-const builtinExpressionMethods = new Set<string>([
-    'getAttrib'
-])
+
 
 export function compileExpression(expression: string): CompiledExpression {
     const attributes = new Set<string>()
@@ -89,49 +141,7 @@ export class CompiledExpression {
     }
 }
 
-const globalFunctions: GlobalFunctions = {
-    cos: Math.cos,
-    sin: Math.sin,
-    tan: Math.atan,
-    acos: Math.acos,
-    asin: Math.asin,
-    atan: Math.atan,
-    atan2: Math.atan2,
-    floor: Math.floor,
-    ceil: Math.ceil,
-    round: Math.round,
-    lerp,
-    lerpv: (a: Vec2, b: Vec2, f: number) => new Vec2(
-        a.x + (b.x - a.x) * f,
-        a.y + (b.y - a.y) * f,
-    )
-}
 
-export interface GlobalFunctions {
-    cos(x: number): number
-
-    sin(x: number): number
-
-    tan(x: number): number
-
-    acos(x: number): number
-
-    asin(x: number): number
-
-    atan(x: number): number
-
-    atan2(y: number, x: number): number
-
-    floor(x: number): number
-
-    ceil(x: number): number
-
-    round(x: number): number
-
-    lerp(a: number, b: number, f: number): number
-
-    lerpv(a: Vec2, b: Vec2, f: number): Vec2
-}
 
 export interface ExpressionContext {
 
