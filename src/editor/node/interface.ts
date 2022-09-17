@@ -36,12 +36,12 @@ export class NodeInterfaceBuilder {
     }
 
     float(id: string, label: string, defaultValue: number = 0) {
-        this.node.addParameter(NodeParameter.float(id, defaultValue))
+        this.node.addParameter(NodeParameter.float(this.node, id, defaultValue))
         this.node.interface.push(new FloatInterfaceItem(id, label))
     }
 
     code(id: string) {
-        this.node.addParameter(NodeParameter.code(id))
+        this.node.addParameter(NodeParameter.code(this.node, id))
         this.node.interface.push(new CodeEditorInterfaceItem(id))
     }
 }

@@ -1,12 +1,11 @@
 import {CompiledExpression, compileExpression, compileStatements} from "@/editor/compile";
+import {Node} from "@/editor/node/index";
 
 
 export abstract class NodeParameter {
-    id: string
     value?: any
 
-    constructor(id: string) {
-        this.id = id;
+    constructor(readonly node: Node, readonly id: string) {
     }
 
     abstract type: string
@@ -20,25 +19,26 @@ export abstract class NodeParameter {
 
     set(value: any) {
         this.value = value
+        this.node.markDirty()
     }
 
     setExpression(value: any) {
         this.value = compileExpression(value)
     }
 
-    static float(id: string, defaultValue: number) {
-        return new FloatNodeParameter(id, defaultValue)
+    static float(node: Node, id: string, defaultValue: number) {
+        return new FloatNodeParameter(node, id, defaultValue)
     }
 
-    static code(id: string) {
-        return new CodeNodeParameter(id)
+    static code(node: Node, id: string) {
+        return new CodeNodeParameter(node, id)
     }
 }
 
 export class FloatNodeParameter extends NodeParameter {
 
-    constructor(id: string, defaultValue: number) {
-        super(id);
+    constructor(node: Node, id: string, defaultValue: number) {
+        super(node, id);
         this.value = defaultValue
     }
 
@@ -48,8 +48,8 @@ export class FloatNodeParameter extends NodeParameter {
 
 export class CodeNodeParameter extends NodeParameter {
 
-    constructor(id: string) {
-        super(id);
+    constructor(node: Node, id: string) {
+        super(node, id);
         this.value = ''
     }
 
