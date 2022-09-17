@@ -92,15 +92,22 @@ export class EditorContext {
             this.activeNode.value = undefined
     }
 
+    jobScheduled = false
+
     cookNode(node: Node) {
         this.scheduledCookJob.value = new CookJob(this, node.path)
+        this.jobScheduled = true
 
         requestAnimationFrame(() => {
-            if(!this.cookJob.value && this.scheduledCookJob.value) {
-                this.cookJob.value = this.scheduledCookJob.value
-                this.cookJob.value = this.scheduledCookJob.value
-                this.scheduledCookJob.value = undefined
-                this.cookJob.value.run()
+            if (this.jobScheduled) {
+                this.cookJob.value?.cancel()
+                if (this.scheduledCookJob.value) {
+                    this.cookJob.value = this.scheduledCookJob.value
+                    this.cookJob.value = this.scheduledCookJob.value
+                    this.scheduledCookJob.value = undefined
+                    this.cookJob.value.run()
+                }
+                this.jobScheduled = false
             }
         })
     }
