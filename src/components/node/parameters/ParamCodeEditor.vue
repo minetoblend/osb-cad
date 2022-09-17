@@ -8,6 +8,7 @@
         :indent-with-tab="true"
         :tab-size="2"
         :extensions="extensions"
+        @ready="handleReady"
         @blur="saveCode"
     >
 
@@ -20,8 +21,11 @@ import {computed, defineProps, PropType, ref, watch} from "vue";
 import {NodeInterfaceItem} from "@/editor/node/interface";
 import {Node} from "@/editor/node";
 import {Codemirror} from 'vue-codemirror'
-import {javascript} from '@codemirror/lang-javascript'
+import {javascript, javascriptLanguage} from '@codemirror/lang-javascript'
 import {oneDark} from '@codemirror/theme-one-dark'
+import {EditorState} from '@codemirror/state'
+import {CompletionContext} from '@codemirror/autocomplete'
+import {builtinStatementMethods} from "@/editor/compile";
 
 const props = defineProps({
   node: {
@@ -33,9 +37,40 @@ const props = defineProps({
     required: true,
   }
 })
+const lang = javascript()
 
-const extensions = [javascript(), oneDark]
+const methods = [...builtinStatementMethods]
 
+function complete(context: CompletionContext) {
+  let word = context.matchBefore(/[\w$]*/)!
+  if (word.from == word.to && !context.explicit)
+    return null
+  const options = []
+
+  if ('$pos'.startsWith(word.text)) {
+    options.push({label: '$pos', type: 'variable', info: "Sprite position"})
+  }
+  if ('$img'.startsWith(word.text)) {
+    options.push({label: '$img', type: 'variable', info: "Sprite image"})
+  }
+
+  methods.forEach(method => {
+    if (method.toLowerCase().startsWith(word.text.toLowerCase()))
+      options.push({
+        label: method,
+        type: 'function',
+      })
+  })
+
+  return {
+    from: word!.from,
+    options: options
+  }
+}
+
+const extensions = [javascript(), oneDark, javascriptLanguage.data.of({
+  autocomplete: complete
+})]
 
 const param = computed(() => props.node.params.get(props.interface.id))
 
@@ -48,6 +83,10 @@ watch(param, param => {
 
 function saveCode() {
   param.value?.set(code.value)
+}
+
+function handleReady({state}: { state: EditorState }) {
+  console.log(state)
 }
 
 </script>
