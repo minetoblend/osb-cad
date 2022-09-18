@@ -87,7 +87,7 @@ function handleDrag(evt: MouseEvent) {
 }
 
 function handleDblClick() {
-  props.ctx.cookNode(props.node)
+  props.node.handleDoubleClick()
 }
 
 function startSocketDrag(socket: NodeInput | NodeOutput, evt: MouseEvent) {

@@ -2,7 +2,7 @@
   <div class="storyboard-editor">
     <splitpanes style="height: 100%">
       <pane>
-
+        <storyboard-viewport/>
       </pane>
       <pane>
         <splitpanes horizontal>
@@ -24,6 +24,7 @@ import {EditorContext} from "@/editor/ctx/context";
 import {Splitpanes, Pane} from 'splitpanes'
 import NodeParameters from "@/components/node/parameters/NodeParameters.vue";
 import {provide} from "vue";
+import StoryboardViewport from "@/components/viewport/StoryboardViewport.vue";
 
 const ctx = new EditorContext()
 

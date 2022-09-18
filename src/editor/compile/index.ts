@@ -2,10 +2,11 @@ import * as parser from '@babel/parser'
 import traverse from '@babel/traverse'
 import generate from "@babel/generator";
 import {createCodeBlockVisitor, createExpressionVisitor} from "@/editor/compile/visit";
-import {lerp, Vec2} from "@/util/math";
+import {lerp, Vec2, Vec2Like} from "@/util/math";
+import {SBElement} from "@/editor/objects";
 
 
-const globalFunctions: GlobalFunctions = {
+export const globalFunctions: GlobalFunctions = {
     cos: Math.cos,
     sin: Math.sin,
     tan: Math.atan,
@@ -20,7 +21,10 @@ const globalFunctions: GlobalFunctions = {
     lerpv: (a: Vec2, b: Vec2, f: number) => new Vec2(
         a.x + (b.x - a.x) * f,
         a.y + (b.y - a.y) * f,
-    )
+    ),
+    vec2(x: number, y: number): Vec2Like {
+        return {x, y}
+    }
 }
 
 export interface GlobalFunctions {
@@ -47,6 +51,8 @@ export interface GlobalFunctions {
     lerp(a: number, b: number, f: number): number
 
     lerpv(a: Vec2, b: Vec2, f: number): Vec2
+
+    vec2(x: number, y: number): Vec2Like;
 }
 
 export const builtinExpressionMethods = new Set<string>([
@@ -66,35 +72,34 @@ export function compileStatements(code: string) {
     const ast = parser.parse('(ctx, idx) => {' + code.trim() + ' }')
 
     traverse(ast, {
-        ...createCodeBlockVisitor(attributes, dependencies, builtinExpressionMethods)
+        ...createCodeBlockVisitor(attributes, dependencies, builtinStatementMethods)
     })
 
     const transformedCode = generate(ast)
     const compiledFunction = eval(transformedCode.code)
-    console.log(transformedCode)
     return new CompiledCodeBlock(compiledFunction, attributes, dependencies)
 }
 
 
-
-export function compileExpression(expression: string): CompiledExpression {
+export function compileExpression(expression: string, withIndex: boolean): CompiledExpression {
     const attributes = new Set<string>()
     const dependencies = new Set<ExpressionDependency>()
 
-    const ast = parser.parse('(ctx, idx) => ' + expression.trim())
+    const ast = parser.parse('(ctx, el, idx) => ' + expression.trim())
 
     traverse(ast, {
-        ...createExpressionVisitor(attributes, dependencies, builtinExpressionMethods)
+        ...createExpressionVisitor(withIndex, attributes, dependencies, builtinExpressionMethods)
     })
 
     const transformedCode = generate(ast)
     const compiledFunction = eval(transformedCode.code)
 
-    return new CompiledExpression(compiledFunction, attributes, dependencies)
+    return new CompiledExpression(compiledFunction, expression, attributes, dependencies)
 }
 
 export enum ExpressionDependency {
     ElementIndex,
+    Time,
 }
 
 export const Globals = new Set<string>(
@@ -109,13 +114,17 @@ export class CompiledCodeBlock {
 export class CompiledExpression {
     readonly isConstant: boolean;
 
-    constructor(readonly expression: (ctx: any, idx: number) => any, readonly attribtues: Set<string>, readonly dependencies: Set<ExpressionDependency>) {
+    constructor(readonly expression: (ctx: any, el?: SBElement, idx?: number) => any,
+                readonly source: string,
+                readonly attribtues: Set<string>,
+                readonly dependencies: Set<ExpressionDependency>,
+    ) {
         this.isConstant = attribtues.size === 0 && dependencies.size === 0
 
         if (this.isConstant)
             this.cachedValue = expression({
                 ...builtinExpressionMethods
-            }, -1)
+            })
     }
 
     cachedValue?: any
@@ -124,7 +133,7 @@ export class CompiledExpression {
         return this.dependencies.has(ExpressionDependency.ElementIndex)
     }
 
-    evaluate(ctx: ExpressionContext, idx?: number) {
+    evaluate(ctx: ExpressionContext, el?: SBElement, idx?: number) {
         if (this.isConstant)
             return this.cachedValue
 
@@ -134,13 +143,12 @@ export class CompiledExpression {
         }
 
         if (idx === undefined) {
-            return this.expression(combinedCtx, -1)
+            return this.expression(combinedCtx, el, -1)
         } else {
-            return this.expression(combinedCtx, idx)
+            return this.expression(combinedCtx, el, idx)
         }
     }
 }
-
 
 
 export interface ExpressionContext {

@@ -2,6 +2,9 @@ import {EditorContext} from "@/editor/ctx/context";
 import {NodePath} from "@/editor/node/path";
 import {CircularDependencyError, NodeError} from "@/editor/node/error";
 import {Node, NodeStatus} from "@/editor/node/index";
+import {ElementNode} from "@/editor/node/element";
+import {CookContext} from "@/editor/node/cook.context";
+import {animationFrameAsPromise} from "@/util/promise";
 
 export class CookJob {
     private nodes: Node[] = [];
@@ -10,6 +13,8 @@ export class CookJob {
     }
 
     canceled = false
+    finished = false
+    cooking = new Set<Node>()
 
     async run(): Promise<void> {
         console.error('running job')
@@ -45,23 +50,37 @@ export class CookJob {
                 })
             }
         }
+        if (this.finished) {
+            const node = this.ctx.getObject(this.path) as ElementNode
+            this.ctx.currentGeometry.value = node.getOutput(0)
+        }
         this.runScheduledJob()
     }
 
     private async cookNode(node: Node) {
+        this.cooking.add(node)
         const connections = node.parent?.getConnectionsLeadingTo(node)
         connections?.forEach(connection => connection.circular.value = false)
 
         try {
-            await this.ctx.workerPool.cookNode(node, () => {
-                node.status.value = NodeStatus.Cooking
-            })
+            node.status.value = NodeStatus.Cooking
+            await animationFrameAsPromise()
+
+            console.log('cooking ' + node.path.toString())
+            const ctx = new CookContext(node)
+            const result = await node.cook(ctx)
+
             if (!this.canceled) {
+                node.setResultCache(result.outputData)
                 node.status.value = NodeStatus.Cooked
             }
+
+
         } catch (e) {
+            console.log(e)
             node.status.value = NodeStatus.Error
         }
+        this.cooking.delete(node)
     }
 
     cancel() {
@@ -85,9 +104,10 @@ export class CookJob {
     cookNextNode(resolve: Function) {
         if (this.canceled)
             return resolve();
-        if (this.nodes.length === 0)
+        if (this.nodes.length === 0 && this.cooking.size === 0) {
+            this.finished = true
             return resolve()
-
+        }
         const nodes = this.nodes
         for (let i = 0; i < nodes.length; i++) {
             const node = nodes[i]

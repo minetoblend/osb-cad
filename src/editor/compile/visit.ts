@@ -1,19 +1,36 @@
 import {NodePath, types, Visitor} from "@babel/core";
-import {AssignmentExpression, Identifier, CallExpression} from "@babel/types";
+import {AssignmentExpression, CallExpression, Identifier} from "@babel/types";
 import {ExpressionDependency} from "@/editor/compile/index";
 
 
-
-export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean, dependencies: Set<ExpressionDependency>, attribtues: Set<string>) {
+export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean, withIndex: boolean, dependencies: Set<ExpressionDependency>, attribtues: Set<string>) {
     if (path.node.name === 'idx') {
-        dependencies.add(ExpressionDependency.ElementIndex)
-        return;
+        if (path.node.start !== 10) { //skip the index being passed into the method
+            dependencies.add(ExpressionDependency.ElementIndex)
+            if (!withIndex)
+                throw Error('Cannot access individual sprites')
+            return;
+        }
+    }
+
+    if (path.node.name === 'el') {
+        if (path.node.start !== 6) { //skip the index being passed into the method
+            dependencies.add(ExpressionDependency.ElementIndex)
+            if (!withIndex)
+                throw Error('Cannot access individual sprites')
+            return;
+        }
     }
 
     if (path.node.name.startsWith('_')) {
         if (path.parent.type === 'AssignmentExpression' && path.key === 'left') {
             throw new Error('Cannot write to constants.')
         }
+
+        if (path.node.name.substring(1) === 'TIME') {
+            dependencies.add(ExpressionDependency.Time)
+        }
+
 
         path.replaceWith(types.memberExpression(
             types.identifier('ctx'),
@@ -24,7 +41,8 @@ export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean,
 
     if (path.node.name.startsWith('$')) {
         attribtues.add(path.node.name.substring(1))
-
+        if (!withIndex)
+            throw Error('Cannot access individual sprites')
         if (path.parent.type === 'AssignmentExpression' && path.key === 'left') {
             if (!allowWrite)
                 throw new Error('Cannot write to attributes in Expression.')
@@ -54,7 +72,7 @@ export function visitCallExpression(path: NodePath<CallExpression>, builtinMetho
     if (path.get('callee').isIdentifier()) {
         const name = (path.node.callee as Identifier).name
         if (!builtinMethods.has(name)) {
-            throw new Error ('Unknown function ' + name)
+            throw new Error('Unknown function ' + name)
         }
         path.replaceWith(
             types.callExpression(
@@ -71,16 +89,16 @@ export function visitCallExpression(path: NodePath<CallExpression>, builtinMetho
     }
 }
 
-export function createExpressionVisitor(attributes: Set<string>, dependencies: Set<ExpressionDependency>, builtinMethods: Set<string>): Visitor {
+export function createExpressionVisitor(withIndex: boolean, attributes: Set<string>, dependencies: Set<ExpressionDependency>, builtinMethods: Set<string>): Visitor {
     return {
-        Identifier: path => visitIdentifier(path, false, dependencies, attributes),
+        Identifier: path => visitIdentifier(path, false, withIndex, dependencies, attributes),
         CallExpression: path => visitCallExpression(path, builtinMethods)
     }
 }
 
 export function createCodeBlockVisitor(attributes: Set<string>, dependencies: Set<ExpressionDependency>, builtinMethods: Set<string>): Visitor {
     return {
-        Identifier: path => visitIdentifier(path, true, dependencies, attributes),
+        Identifier: path => visitIdentifier(path, true, true, dependencies, attributes),
         CallExpression: path => visitCallExpression(path, builtinMethods)
     }
 }

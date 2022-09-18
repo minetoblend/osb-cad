@@ -7,13 +7,28 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
+    ElBreadcrumbItem: typeof import('element-plus/es')['ElBreadcrumbItem']
+    ElContainer: typeof import('element-plus/es')['ElContainer']
+    ElHeader: typeof import('element-plus/es')['ElHeader']
+    ElInput: typeof import('element-plus/es')['ElInput']
+    ElMain: typeof import('element-plus/es')['ElMain']
+    ElOption: typeof import('element-plus/es')['ElOption']
+    ElSelect: typeof import('element-plus/es')['ElSelect']
     NodeConnectionView: typeof import('./src/components/node/NodeConnectionView.vue')['default']
     NodeEditor: typeof import('./src/components/node/NodeEditor.vue')['default']
+    NodeParamColor: typeof import('./src/components/node/parameters/NodeParamColor.vue')['default']
     NodeParameters: typeof import('./src/components/node/parameters/NodeParameters.vue')['default']
+    NodeParamFloat: typeof import('./src/components/node/parameters/NodeParamFloat.vue')['default']
+    NodeParamInt: typeof import('./src/components/node/parameters/NodeParamInt.vue')['default']
+    NodeParamOrigin: typeof import('./src/components/node/parameters/NodeParamOrigin.vue')['default']
+    NodeParamSprite: typeof import('./src/components/node/parameters/NodeParamSprite.vue')['default']
+    NodeParamVec2: typeof import('./src/components/node/parameters/NodeParamVec2.vue')['default']
     NodeView: typeof import('./src/components/node/NodeView.vue')['default']
     ParamCodeEditor: typeof import('./src/components/node/parameters/ParamCodeEditor.vue')['default']
     SelectBox: typeof import('./src/components/SelectBox.vue')['default']
     ShortcutReceiver: typeof import('./src/components/ShortcutReceiver.vue')['default']
     StoryboardEditor: typeof import('./src/components/StoryboardEditor.vue')['default']
+    StoryboardViewport: typeof import('./src/components/viewport/StoryboardViewport.vue')['default']
   }
 }

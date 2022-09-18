@@ -1,46 +1,63 @@
-import {NodeSystem} from "@/editor/node/system";
-import {ElementNode} from "@/editor/node/element";
 import {Node} from "@/editor/node";
-import {SpriteWrangleNode} from "@/editor/node/element/wrangle";
+import {NodeSystem} from "@/editor/node/system";
 import {NodePath} from "@/editor/node/path";
 import {EditorCommand} from "@/editor/ctx/editorCommand";
 import {CommandHistory} from "@/editor/ctx/history";
 import {CookJob} from "@/editor/node/cook";
-import {inject, shallowRef} from "vue";
+import {ref, shallowRef, watch} from "vue";
 import {WorkerPool} from "@/editor/ctx/workerPool";
-
+import {SpriteNode} from "@/editor/node/element/sprite";
+import {SBCollection} from "@/editor/objects/collection";
+import {FileStore} from "@/editor/ctx/texture";
+import {ExpressionDependency} from "@/editor/compile";
+import {SceneNode} from "@/editor/node/element/scene";
+import * as PIXI from 'pixi.js'
+import {SerializedProject} from "@/editor/ctx/serialize";
 
 export class EditorContext {
 
-    readonly root = new NodeSystem<ElementNode>(this, 'root')
+    readonly root = new SceneNode(this, 'root')
     readonly history = new CommandHistory(this)
     readonly activeNode = shallowRef<Node>()
 
     readonly workerPool = new WorkerPool()
 
+    readonly time = ref(0)
+
+    readonly currentGeometry = shallowRef<SBCollection>()
+
+    textureStore = new FileStore()
+    activePath = shallowRef(NodePath.root())
+
     constructor() {
         this.setupEvents()
+        this.textureStore.load()
 
-        let rootNode = new SpriteWrangleNode(this)
-        rootNode.position.value.set(300, 300)
-        rootNode.name.value = 'SpriteWrangle4'
+        let spriteNode = new SpriteNode(this)
 
-        this.root.add(
-            rootNode
-        )
+        let sceneNode = new SceneNode(this)
+        let sceneNode2 = new SceneNode(this)
 
-        for (let i = 0; i < 4; i++) {
-            let node = new SpriteWrangleNode(this)
-            node.position.value.set(20 + 150 * i, 150)
-            node.name.value = 'Node' + (i + 1)
+        this.root.add(sceneNode)
+        sceneNode.add(sceneNode2)
+        sceneNode2.add(spriteNode)
 
-            this.root.add(
-                node
-            )
 
-        }
 
+        const ticker = PIXI.Ticker.shared
+        ticker.add(() => this.runUpdate(ticker.deltaMS))
+
+        watch(this.time, () => {
+            this.root.markDependencyChanged(ExpressionDependency.Time)
+        })
+
+        console.log(this.serialize())
     }
+
+    runUpdate(dt: number) {
+        this.time.value = (this.time.value + dt) % 5000
+    }
+
 
     setupEvents() {
         electronAPI.handleUndo(() => {
@@ -108,8 +125,10 @@ export class EditorContext {
     onNodeMarkedDirty(node: Node) {
         this.cookNode(node)
     }
-}
 
-export function useContext(): EditorContext {
-    return inject<EditorContext>('ctx')!
+    private serialize() : SerializedProject {
+        return {
+            nodes: this.root.serialize()
+        }
+    }
 }

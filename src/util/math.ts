@@ -2,7 +2,75 @@ export function lerp(a: number, b: number, f: number) {
     return a + (b - a) * f
 }
 
-export class Vec2 {
+export interface IHasMathOperations<T> {
+    clone(): T
+
+    add(rhs: T): T
+
+    sub(rhs: T): T
+
+    mul(rhs: T): T
+
+    div(rhs: T): T
+
+    addF(rhs: number): T
+
+    subF(rhs: number): T
+
+    mulF(rhs: number): T
+
+    divF(rhs: number): T
+
+    lerp(rhs: T, f: number): T
+}
+
+export class Float implements IHasMathOperations<Float> {
+
+    constructor(public value: number) {
+    }
+
+    add(rhs: Float): Float {
+        return new Float(this.value + rhs.value);
+    }
+
+    addF(rhs: number): Float {
+        return new Float(this.value - rhs);
+    }
+
+    div(rhs: Float): Float {
+        return new Float(this.value / rhs.value);
+    }
+
+    divF(rhs: number): Float {
+        return new Float(this.value / rhs);
+    }
+
+    mul(rhs: Float): Float {
+        return new Float(this.value * rhs.value);
+    }
+
+    mulF(rhs: number): Float {
+        return new Float(this.value * rhs);
+    }
+
+    sub(rhs: Float): Float {
+        return new Float(this.value - rhs.value);
+    }
+
+    subF(rhs: number): Float {
+        return new Float(this.value - rhs);
+    }
+
+    lerp(rhs: Float, f: number): Float {
+        return new Float(this.value + (rhs.value - this.value) * f)
+    }
+
+    clone() {
+        return new Float(this.value)
+    }
+}
+
+export class Vec2 implements IHasMathOperations<Vec2> {
     constructor(public x: number = 0, public y: number = x) {
 
     }
@@ -162,4 +230,82 @@ export function getTangentsOf2Circles(center1: Vec2, rad1: number, center2: Vec2
     }
 
     return ans
+}
+
+export class Color implements IHasMathOperations<Color> {
+    constructor(public r: number, public g: number, public b: number) {
+    }
+
+    add(rhs: Color): Color {
+        return new Color(this.r + rhs.r, this.g + rhs.g, this.b + rhs.b);
+    }
+
+    addF(rhs: number): Color {
+        return new Color(this.r + rhs, this.g + rhs, this.b + rhs);
+    }
+
+    clone(): Color {
+        return new Color(this.r, this.g, this.b);
+    }
+
+    div(rhs: Color): Color {
+        return new Color(this.r / rhs.r, this.g / rhs.g, this.b / rhs.b);
+    }
+
+    divF(rhs: number): Color {
+        return new Color(this.r / rhs, this.g / rhs, this.b / rhs);
+    }
+
+    lerp(rhs: Color, f: number): Color {
+        return new Color(
+            this.r + (rhs.r - this.r) * f,
+            this.g + (rhs.g - this.g) * f,
+            this.b + (rhs.b - this.b) * f,
+        );
+    }
+
+    mul(rhs: Color): Color {
+        return new Color(this.r * rhs.r, this.g * rhs.g, this.b * rhs.b);
+    }
+
+    mulF(rhs: number): Color {
+        return new Color(this.r * rhs, this.g * rhs, this.b * rhs);
+    }
+
+    sub(rhs: Color): Color {
+        return new Color(this.r - rhs.r, this.g - rhs.g, this.b - rhs.b);
+    }
+
+    subF(rhs: number): Color {
+        return new Color(this.r - rhs, this.g - rhs, this.b - rhs);
+    }
+
+
+    get hex() {
+        let r = clamp(this.r, 0, 1) * 255
+        let g = clamp(this.g, 0, 1) * 255
+        let b = clamp(this.b, 0, 1) * 255
+        return (r << 16) | (g << 8) | b
+    }
+
+    static get white(): Color {
+        return new Color(1, 1, 1);
+    }
+
+    static get black(): Color {
+        return new Color(0, 0, 0);
+    }
+}
+
+export interface Vec2Like {
+    x: number
+    y: number
+}
+
+export function clamp(value: number, min: number, max: number) {
+    if (value < min)
+        return min;
+    if (value > max)
+        return max;
+    return value;
 }

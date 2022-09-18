@@ -62,7 +62,7 @@ const outputPosition = computed(() => {
     const rect = socket.getBoundingClientRect()
     return new Vec2(
         rect.x - props.bounds.x + rect.width * 0.5,
-        rect.y - props.bounds.y + rect.width * 0.5
+        rect.y - props.bounds.y + rect.height * 0.5
     )
   }
 })
@@ -79,7 +79,7 @@ const inputPosition = computed(() => {
     const rect = socket.getBoundingClientRect()
     return new Vec2(
         rect.x - props.bounds.x + rect.width * 0.5,
-        rect.y - props.bounds.y + rect.width * 0.5
+        rect.y - props.bounds.y + rect.height * 0.5
     )
   }
 })

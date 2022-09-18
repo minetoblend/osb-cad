@@ -1,5 +1,5 @@
 <template>
-  <div v-if="param" class="node-param code-param">
+  <div v-if="param" class="code-param">
     <codemirror
         v-model="code"
         placeholder="Code goes here..."
@@ -8,7 +8,6 @@
         :indent-with-tab="true"
         :tab-size="2"
         :extensions="extensions"
-        @ready="handleReady"
         @blur="saveCode"
     >
 
@@ -23,7 +22,6 @@ import {Node} from "@/editor/node";
 import {Codemirror} from 'vue-codemirror'
 import {javascript, javascriptLanguage} from '@codemirror/lang-javascript'
 import {oneDark} from '@codemirror/theme-one-dark'
-import {EditorState} from '@codemirror/state'
 import {CompletionContext} from '@codemirror/autocomplete'
 import {builtinStatementMethods} from "@/editor/compile";
 
@@ -76,17 +74,19 @@ const param = computed(() => props.node.params.get(props.interface.id))
 
 const code = ref('')
 
-watch(param, param => {
-  if (param)
-    code.value = param?.get()
+watch(param, () => {
+  loadCode()
 })
+
+function loadCode() {
+  if (param.value)
+    code.value = param.value!.get()
+}
+
+loadCode()
 
 function saveCode() {
   param.value?.set(code.value)
-}
-
-function handleReady({state}: { state: EditorState }) {
-  console.log(state)
 }
 
 </script>

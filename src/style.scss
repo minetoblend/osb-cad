@@ -25,3 +25,9 @@
   min-height: 4px;
   background: #414243 !important;
 }
+
+
+.el-breadcrumb__item > * {
+  user-select: none !important;
+  cursor: pointer !important;
+}

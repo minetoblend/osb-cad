@@ -1,44 +1,60 @@
 <template>
   <div class="node-editor editor-pane" tabindex="-1">
-    <shortcut-receiver @shortcut="handleShortcut">
-      <div ref="nodePane"
-           class="node-pane"
-           @mousedown.left="handleDragSelect"
-           @mousedown.middle="handlePan"
-           @click.left="deselectAll"
-           @wheel="handleScroll">
-        <svg class="connections-container" v-if="initialized">
-          <g v-for="connection in nodeSystem.connectionList" :key="connection.id">
-            <node-connection-view :from="connection.from" :to="connection.to" :editor-id="id" :bounds="bounds"
-                                  :transform="stack.current"
-                                  :circular="connection.circular.value"
-                                  v-if="connection !== hiddenConnection"
-            />
-          </g>
+    <shortcut-receiver @shortcut="handleShortcut" style="height: 100%;">
+      <el-container style="height: 100% !important;">
+        <el-header style="display: flex; align-items: center; border-bottom: 1px solid var(--el-border-color)">
+          <el-breadcrumb>
+            <el-breadcrumb-item @click="ctx.activePath.value = rootPath">
+              Storyboard
+            </el-breadcrumb-item>
+            <el-breadcrumb-item v-for="(path) in ctx.activePath.value.parentPaths" :key="path.toString()"
+                                @click="ctx.activePath.value = path">
+              {{ path.current }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
+        </el-header>
+        <el-main style="padding:0">
+          <div ref="nodePane"
+               class="node-pane"
+               @mousedown.left="handleDragSelect"
+               @mousedown.middle="handlePan"
+               @click.left="deselectAll"
+               @wheel="handleScroll">
+            <svg class="connections-container" v-if="initialized">
+              <g v-for="connection in nodeSystem.connectionList" :key="connection.id">
+                <node-connection-view :from="connection.from" :to="connection.to" :editor-id="id" :bounds="bounds"
+                                      :transform="stack.current"
+                                      :circular="connection.circular.value"
+                                      v-if="connection !== hiddenConnection"
+                />
+              </g>
 
 
-          <g v-if="tempConnection.active">
-            <node-connection-view :from="tempConnection.from" :to="tempConnection.to" :editor-id="id" :bounds="bounds"
-                                  :transform="stack.current"/>
-          </g>
-        </svg>
+              <g v-if="tempConnection.active">
+                <node-connection-view :from="tempConnection.from" :to="tempConnection.to" :editor-id="id"
+                                      :bounds="bounds"
+                                      :transform="stack.current"/>
+              </g>
+            </svg>
 
-        <div class="node-container" :style="styles">
-          <node-view v-for="node in nodeSystem.nodeList"
-                     :editor-id="id"
-                     :node="node"
-                     :selecting="selecting"
-                     :selection-candidate="isSelectionCandidate(node)"
-                     :ctx="ctx"
-                     :key="node.name"
-                     :viewport-scale="stack.current.scale"
-                     @connection:start="startConnection"
-                     @socket:enter="hoveringSocket = $event"
-                     @socket:leave="hoveringSocket = undefined"
-          />
-          <select-box v-if="selecting" :from="selectFrom" :to="selectTo"/>
-        </div>
-      </div>
+            <div class="node-container" :style="styles">
+              <node-view v-for="node in nodeSystem.nodeList"
+                         :editor-id="id"
+                         :node="node"
+                         :selecting="selecting"
+                         :selection-candidate="isSelectionCandidate(node)"
+                         :ctx="ctx"
+                         :key="node.name"
+                         :viewport-scale="stack.current.scale"
+                         @connection:start="startConnection"
+                         @socket:enter="hoveringSocket = $event"
+                         @socket:leave="hoveringSocket = undefined"
+              />
+              <select-box v-if="selecting" :from="selectFrom" :to="selectTo"/>
+            </div>
+          </div>
+        </el-main>
+      </el-container>
     </shortcut-receiver>
   </div>
 </template>
@@ -48,7 +64,7 @@ import NodeView from './NodeView.vue';
 import {computed, onBeforeUnmount, onMounted, reactive, ref, shallowReactive, shallowRef} from "vue";
 import {drag} from "@/util/event";
 import {EditorStack} from "@/components/node/util";
-import {useContext} from "@/editor/ctx/context";
+import {useContext} from "@/editor/ctx/use";
 import {Vec2} from "@/util/math";
 import SelectBox from "@/components/SelectBox.vue";
 import NodeConnectionView from "@/components/node/NodeConnectionView.vue";
@@ -58,12 +74,17 @@ import {Node, NodeInput, NodeOutput} from "@/editor/node";
 import ShortcutReceiver from "@/components/ShortcutReceiver.vue";
 import {AddConnectionCommand, DeleteNodesCommand, RemoveConnectionCommand} from "@/editor/ctx/command/node";
 import {NodeConnection} from "@/editor/node/connection";
+import {NodePath} from "@/editor/node/path";
 
 const stack = reactive(new EditorStack())
 
 const ctx = useContext()
 
-const nodeSystem = computed(() => ctx.getObject(stack.path) as NodeSystem<any>)
+const nodeSystem = computed(() =>
+    ctx.getObject(ctx.activePath.value) as NodeSystem<any>
+  )
+
+const rootPath = NodePath.root()
 
 const nodePane = ref<HTMLDivElement>()
 
