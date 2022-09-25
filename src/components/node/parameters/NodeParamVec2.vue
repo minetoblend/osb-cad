@@ -15,6 +15,11 @@ import {computed, defineProps, PropType, ref, watch} from "vue";
 import {Node} from "@/editor/node";
 import {NodeInterfaceItem} from "@/editor/node/interface";
 import {FloatNodeParameter} from "@/editor/node/parameter";
+import {compileExpression} from "@/editor/compile";
+import {SetNodeParameterCommand} from "@/editor/ctx/command/parameter";
+import {useContext} from "@/editor/ctx/use";
+
+const ctx = useContext()
 
 const props = defineProps({
   node: {
@@ -47,11 +52,31 @@ function loadValues() {
 }
 
 function commitXValue() {
-  params.value.x.setText(xValue.value)
+  let val: any = xValue.value;
+  const expr = compileExpression(val, params.value.x.withIndex)
+  if (expr.isConstant && expr.source.trim() === expr.cachedValue.toString()) {
+    val = expr.cachedValue
+  } else {
+    val = expr
+  }
+
+  ctx.executeCommand(
+      new SetNodeParameterCommand(ctx, props.node.path, props.interface.id + '.x', val)
+  )
 }
 
 function commitYValue() {
-  params.value.y.setText(yValue.value)
+  let val: any = yValue.value;
+  const expr = compileExpression(val, params.value.y.withIndex)
+  if (expr.isConstant && expr.source.trim() === expr.cachedValue.toString()) {
+    val = expr.cachedValue
+  } else {
+    val = expr
+  }
+
+  ctx.executeCommand(
+      new SetNodeParameterCommand(ctx, props.node.path, props.interface.id + '.y', val)
+  )
 }
 
 loadValues()

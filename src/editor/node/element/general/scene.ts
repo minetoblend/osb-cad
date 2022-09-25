@@ -1,11 +1,14 @@
 import {NodeSystem} from "@/editor/node/system";
-import {ElementNode} from "@/editor/node/element/index";
+import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
-import {NodeBuilder} from "@/editor/node";
+import {NodeBuilder, TimingInformation} from "@/editor/node";
+import {RegisterNode} from "@/editor/node/registry";
 
+@RegisterNode('Scene', ['fas', 'film'], 'objects')
 export class SceneNode extends NodeSystem<ElementNode> {
-    type = 'scene'
     icon = ['fas', 'film']
+
+    nodeType = 'element'
 
 
     constructor(ctx: EditorContext, name: string = 'Scene') {
@@ -18,5 +21,14 @@ export class SceneNode extends NodeSystem<ElementNode> {
                 .int('startTime', 'Start Time')
                 .int('endTime', 'End Time')
             )
+    }
+
+    get timingInformation(): TimingInformation | undefined {
+        return {
+            startTime: this.param('startTime')!.get(),
+            endTime: this.param('endTime')!.get(),
+            keyframes: [],
+            type: 'clip'
+        }
     }
 }

@@ -1,13 +1,14 @@
-import {ElementNode} from "@/editor/node/element/index";
+import {ElementNode} from "@/editor/node/element";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {EditorContext} from "@/editor/ctx/context";
 import {NodeBuilder} from "@/editor/node";
 import {Vec2} from "@/util/math";
 import {SBCollection} from "@/editor/objects/collection";
 import {Origin} from "@/editor/objects/origin";
+import {RegisterNode} from "@/editor/node/registry";
 
+@RegisterNode('Grid', ['fas', 'grip'], 'objects')
 export class GridNode extends ElementNode {
-    type = 'grid'
     icon = ['fas', 'grip'];
 
 

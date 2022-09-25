@@ -7,22 +7,30 @@ export {}
 
 declare module '@vue/runtime-core' {
   export interface GlobalComponents {
+    AddNodeView: typeof import('./src/components/node/AddNodeView.vue')['default']
     ElBreadcrumb: typeof import('element-plus/es')['ElBreadcrumb']
     ElBreadcrumbItem: typeof import('element-plus/es')['ElBreadcrumbItem']
-    ElContainer: typeof import('element-plus/es')['ElContainer']
-    ElHeader: typeof import('element-plus/es')['ElHeader']
+    ElButton: typeof import('element-plus/es')['ElButton']
+    ElCheckbox: typeof import('element-plus/es')['ElCheckbox']
+    ElCol: typeof import('element-plus/es')['ElCol']
     ElInput: typeof import('element-plus/es')['ElInput']
-    ElMain: typeof import('element-plus/es')['ElMain']
+    ElMenu: typeof import('element-plus/es')['ElMenu']
+    ElMenuItem: typeof import('element-plus/es')['ElMenuItem']
     ElOption: typeof import('element-plus/es')['ElOption']
+    ElRow: typeof import('element-plus/es')['ElRow']
     ElSelect: typeof import('element-plus/es')['ElSelect']
+    ElSubMenu: typeof import('element-plus/es')['ElSubMenu']
     NodeConnectionView: typeof import('./src/components/node/NodeConnectionView.vue')['default']
     NodeEditor: typeof import('./src/components/node/NodeEditor.vue')['default']
+    NodeEditorHeader: typeof import('./src/components/node/NodeEditorHeader.vue')['default']
+    NodeParamBool: typeof import('./src/components/node/parameters/NodeParamBool.vue')['default']
     NodeParamColor: typeof import('./src/components/node/parameters/NodeParamColor.vue')['default']
     NodeParameters: typeof import('./src/components/node/parameters/NodeParameters.vue')['default']
     NodeParamFloat: typeof import('./src/components/node/parameters/NodeParamFloat.vue')['default']
     NodeParamInt: typeof import('./src/components/node/parameters/NodeParamInt.vue')['default']
     NodeParamOrigin: typeof import('./src/components/node/parameters/NodeParamOrigin.vue')['default']
     NodeParamSprite: typeof import('./src/components/node/parameters/NodeParamSprite.vue')['default']
+    NodeParamString: typeof import('./src/components/node/parameters/NodeParamString.vue')['default']
     NodeParamVec2: typeof import('./src/components/node/parameters/NodeParamVec2.vue')['default']
     NodeView: typeof import('./src/components/node/NodeView.vue')['default']
     ParamCodeEditor: typeof import('./src/components/node/parameters/ParamCodeEditor.vue')['default']
@@ -30,5 +38,10 @@ declare module '@vue/runtime-core' {
     ShortcutReceiver: typeof import('./src/components/ShortcutReceiver.vue')['default']
     StoryboardEditor: typeof import('./src/components/StoryboardEditor.vue')['default']
     StoryboardViewport: typeof import('./src/components/viewport/StoryboardViewport.vue')['default']
+    TimelineLane: typeof import('./src/components/TimelineLane.vue')['default']
+    TimelineView: typeof import('./src/components/TimelineView.vue')['default']
+  }
+  export interface ComponentCustomProperties {
+    vLoading: typeof import('element-plus/es')['ElLoadingDirective']
   }
 }

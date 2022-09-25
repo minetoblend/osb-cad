@@ -1,5 +1,5 @@
 <template>
-  <div v-if="param" class="code-param">
+  <div v-if="param" class="code-param" ref="element">
     <codemirror
         v-model="code"
         placeholder="Code goes here..."
@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import {computed, defineProps, PropType, ref, watch} from "vue";
+import {computed, defineProps, onBeforeUnmount, PropType, ref, watch} from "vue";
 import {NodeInterfaceItem} from "@/editor/node/interface";
 import {Node} from "@/editor/node";
 import {Codemirror} from 'vue-codemirror'
@@ -73,9 +73,14 @@ const extensions = [javascript(), oneDark, javascriptLanguage.data.of({
 const param = computed(() => props.node.params.get(props.interface.id))
 
 const code = ref('')
+const dirty = ref(false)
 
 watch(param, () => {
   loadCode()
+})
+
+watch(code, () => {
+  dirty.value = true
 })
 
 function loadCode() {
@@ -86,8 +91,36 @@ function loadCode() {
 loadCode()
 
 function saveCode() {
-  param.value?.set(code.value)
+  if (dirty.value) {
+    param.value?.set(code.value)
+    dirty.value = false
+  }
 }
+
+function isDescendant(parent: HTMLElement, child: HTMLElement): boolean {
+  let node = child.parentNode;
+  while (node !== null) {
+    if (node == parent) {
+      return true;
+    }
+    node = node.parentNode;
+  }
+  return false;
+}
+
+const element = ref<HTMLDivElement>()
+
+function onClickAnywhere(evt: MouseEvent) {
+
+  if (evt.target instanceof HTMLElement && !isDescendant(element.value!, evt.target)) {
+    saveCode()
+  }
+}
+
+document.addEventListener('mousedown', onClickAnywhere)
+
+onBeforeUnmount(() => document.removeEventListener('mousedown', onClickAnywhere))
+
 
 </script>
 

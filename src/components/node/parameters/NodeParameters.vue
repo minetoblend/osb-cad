@@ -25,9 +25,11 @@ const activeNode = computed(() => ctx.activeNode.value)
 .node-param {
   display: flex;
   padding: 10px;
+  align-items: baseline;
 
   label {
     width: 120px;
+    margin-right: 10px;
   }
 
   .param-conents {

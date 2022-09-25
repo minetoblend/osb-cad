@@ -59,6 +59,29 @@ export class ScaleCommand extends SpriteCommand<Float> {
     }
 }
 
+export class ScaleVecCommand extends SpriteCommand<Vec2> {
+
+    constructor(public easing: Easing, startTime: number, endTime: number, public startScale: Vec2, public endScale: Vec2) {
+        super(startTime, endTime);
+    }
+
+    clone(): SpriteCommand<Vec2> {
+        return new ScaleVecCommand(this.easing, this.startTime, this.endTime, this.startScale.clone(), this.endScale.clone());
+    }
+
+    valueAtTime(time: number): Vec2 {
+        time = clamp(time, this.startTime, this.endTime);
+
+        let f = (time - this.startTime) / (this.endTime - this.startTime)
+        if (this.startTime === this.endTime)
+            f = 1;
+
+        f = easingFunctions[this.easing](f)
+
+        return this.startScale.lerp(this.endScale, f);
+    }
+}
+
 export class RotateCommand extends SpriteCommand<Float> {
 
     constructor(public easing: Easing, startTime: number, endTime: number, public startAngle: Float, public endAngle: Float) {

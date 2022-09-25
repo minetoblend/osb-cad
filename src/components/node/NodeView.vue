@@ -6,14 +6,15 @@
          @dblclick="handleDblClick"
     >
       <button class="node-toggle">
-        <icon :icon="['fas', 'arrow-up']" fixed-width></icon>
+        <icon :icon="['fas', 'arrow-up']" fixed-width/>
       </button>
       <div class="node-icon">
-        <icon :icon="node.icon" fixed-width></icon>
+        <icon icon="rotate" v-if="node.isCooking.value" fixed-width spin/>
+        <icon :icon="node.icon" v-else fixed-width/>
       </div>
       <div class="node-status-indicator"></div>
       <button class="node-toggle" :class="{selected: node.isOutput}" @click.prevent="setOutput">
-        <icon :icon="['far', 'eye']" fixed-width></icon>
+        <icon :icon="['far', 'eye']" fixed-width/>
       </button>
     </div>
     <div class="node-inputs">
@@ -36,12 +37,19 @@
 </template>
 
 <script setup lang="ts">
-import {Node, NodeInput, NodeOutput, NodeStatus} from "@/editor/node";
-import {computed, defineEmits, defineProps, PropType} from "vue";
+import {Node, NodeStatus} from "@/editor/node";
+import {computed, defineEmits, defineProps, PropType, reactive, ref, watchEffect} from "vue";
 import {drag} from "@/util/event";
 import {MoveNodesOperation} from "@/editor/ctx/operations/move";
 import {EditorContext} from "@/editor/ctx/context";
-import {RenameNodeCommand, SetOutputNodeCommand} from "@/editor/ctx/command/node";
+import {AddConnectionCommand, RenameNodeCommand, SetOutputNodeCommand} from "@/editor/ctx/command/node";
+import {NodeInput, NodeOutput} from "@/editor/node/input";
+import {animateNodePosition, animateNodePositionFlag} from "@/util/flags";
+import gsap from 'gsap'
+import {nodeAnimationTime} from "@/globals";
+import {NodeConnection} from "@/editor/node/connection";
+import {EditorCommandCollection, MoveNodesCommand} from "@/editor/ctx/editorCommand";
+import {Vec2} from "@/util/math";
 
 const props = defineProps({
   node: {
@@ -67,12 +75,18 @@ const props = defineProps({
   ctx: {
     type: Object as PropType<EditorContext>,
     required: true
+  },
+  hoveredConnections: {
+    type: Object as PropType<Set<NodeConnection>>,
+    required: true
   }
 })
 
 const emit = defineEmits(['connection:start', 'socket:enter', 'socket:leave'])
 
 const id = computed(() => props.editorId + props.node.name.value)
+
+const isDragging = ref(false)
 
 function handleDrag(evt: MouseEvent) {
   if (!props.node.isSelected)
@@ -81,8 +95,47 @@ function handleDrag(evt: MouseEvent) {
   const operation = new MoveNodesOperation(props.ctx, props.node.parent!.selectedNodes)
 
   drag(evt, {
+    onDragStart: () => isDragging.value = true,
     onDrag: ({delta}) => operation.move(delta.divF(props.viewportScale)),
-    onDragEnd: () => operation.commit(),
+    onDragEnd: () => {
+      if (props.hoveredConnections.size > 0 && operation.items.length === 1) {
+        const connection = [...props.hoveredConnections.values()][0]
+        operation.cancel()
+        animateNodePosition(() => {
+          const deltaY = connection.to.node.position.value.y - connection.from.node.position.value.y - 200
+          const dependencies = [connection.from.node, ...connection.from.node.getDependenciesInParent()]
+          props.ctx.executeCommand(new EditorCommandCollection(props.ctx, 'Move Node', [
+            //new MoveNodesCommand(props.ctx, [operation.items[0].path], [position]),
+            new AddConnectionCommand(props.ctx,
+                connection.from.node.path,
+                connection.from.index,
+                props.node.path,
+                0
+            ),
+            new AddConnectionCommand(props.ctx,
+                props.node.path,
+                0,
+                connection.to.node.path,
+                connection.to.index,
+            ),
+            new MoveNodesCommand(
+                props.ctx,
+                [
+                  props.node.path,
+                  ...dependencies.map(it => it.path)
+                ],
+                [
+                  connection.from.node.position.value.withY(connection.to.node.position.value.y - 100),
+                  ...dependencies.map(it => it.position.value.add(new Vec2(0, deltaY)))
+                ]
+            )
+          ]))
+        })
+      } else {
+        operation.commit()
+      }
+      isDragging.value = false
+    },
   })
 }
 
@@ -99,7 +152,7 @@ function startSocketDrag(socket: NodeInput | NodeOutput, evt: MouseEvent) {
 
 const classes = computed(() => {
 
-  let statusClass: string;
+  let statusClass: string = '';
   switch (props.node.status.value) {
     case NodeStatus.Dirty:
       statusClass = 'dirty';
@@ -110,25 +163,44 @@ const classes = computed(() => {
     case NodeStatus.Error:
       statusClass = 'error';
       break;
-    case NodeStatus.Cooking:
-      statusClass = 'cooking';
-      break;
   }
 
   return {
     selected: !props.selecting && props.node.isSelected,
     'selection-candidate': props.selectionCandidate,
-    [statusClass]: true
+    [statusClass]: true,
+    dragging: isDragging.value
+  }
+})
+
+const animatedPosition = reactive({
+  x: props.node.position.value.x,
+  y: props.node.position.value.y
+})
+
+watchEffect(() => {
+  if (animateNodePositionFlag) {
+    gsap.to(animatedPosition, {
+      duration: nodeAnimationTime,
+      x: props.node.position.value.x,
+      y: props.node.position.value.y,
+      ease: 'power4.out',
+    })
+  } else {
+    animatedPosition.x = props.node.position.value.x
+    animatedPosition.y = props.node.position.value.y
   }
 })
 
 const styles = computed(() => {
-  const position = props.node.position.value
+  const position = animatedPosition
+
   return {
     top: `${position.y}px`,
     left: `${position.x}px`,
   }
 })
+
 
 function updateNodeName(evt: Event) {
   const newName = (evt.target as HTMLDivElement).textContent!
@@ -153,12 +225,19 @@ function setOutput() {
 <style lang="scss">
 .node {
   position: absolute;
+  pointer-events: all;
+
+  &.dragging, &.dragging * {
+    pointer-events: none !important;
+
+  }
 
   .node-contents {
     background-color: #1D1E1F;
-    width: 120px;
-    height: 30px;
+    width: 124px;
+    height: 34px;
     border: 2px solid #414243;
+    box-sizing: border-box;
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -214,6 +293,11 @@ function setOutput() {
       border-radius: 5px;
     }
 
+    &:hover::after {
+      border: 3px solid #42B983;
+      border-radius: 7px;
+    }
+
     &.multiple::after {
       width: 25px;
     }
@@ -230,6 +314,7 @@ function setOutput() {
     flex-grow: 1;
     pointer-events: none;
     text-align: center;
+    font-size: 1.2em;
   }
 
   .node-toggle {
@@ -268,6 +353,7 @@ function setOutput() {
     bottom: 2px;
     height: 2px;
     margin: 0 auto;
+    display: none;
   }
 
   &.dirty .node-status-indicator {

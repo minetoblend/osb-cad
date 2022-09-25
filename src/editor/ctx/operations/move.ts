@@ -14,8 +14,8 @@ export abstract class MoveOperation<T extends IHasPosition> extends Operation {
         this.currentPositions = items.map(item => this.getPosition(item).clone())
     }
 
-    protected readonly startPositions: Vec2[]
-    protected readonly currentPositions: Vec2[]
+    readonly startPositions: Vec2[]
+    readonly currentPositions: Vec2[]
 
     getPosition(item: T) {
         if (item.position instanceof Vec2)

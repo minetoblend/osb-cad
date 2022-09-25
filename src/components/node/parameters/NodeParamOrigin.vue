@@ -3,29 +3,29 @@
     <div class="origin-select-box">
       <div class="row">
         <button class="origin-select-button" :class="{selected: value === Origin.TopLeft}"
-                @click="param.set(Origin.TopLeft)"/>
+                @click="setParam(Origin.TopLeft)"/>
         <button class="origin-select-button" :class="{selected: value === Origin.TopCentre}"
-                @click="param.set(Origin.TopCentre)"/>
+                @click="setParam(Origin.TopCentre)"/>
         <button class="origin-select-button" :class="{selected: value === Origin.TopRight}"
-                @click="param.set(Origin.TopRight)"/>
+                @click="setParam(Origin.TopRight)"/>
       </div>
 
       <div class="row">
         <button class="origin-select-button" :class="{selected: value === Origin.CentreLeft}"
-                @click="param.set(Origin.CentreLeft)"/>
+                @click="setParam(Origin.CentreLeft)"/>
         <button class="origin-select-button" :class="{selected: value === Origin.Centre}"
-                @click="param.set(Origin.Centre)"/>
+                @click="setParam(Origin.Centre)"/>
         <button class="origin-select-button" :class="{selected: value === Origin.CentreRight}"
-                @click="param.set(Origin.CentreRight)"/>
+                @click="setParam(Origin.CentreRight)"/>
       </div>
 
       <div class="row">
         <button class="origin-select-button" :class="{selected: value === Origin.BottomLeft}"
-                @click="param.set(Origin.BottomLeft)"/>
+                @click="setParam(Origin.BottomLeft)"/>
         <button class="origin-select-button" :class="{selected: value === Origin.BottomCentre}"
-                @click="param.set(Origin.BottomCentre)"/>
+                @click="setParam(Origin.BottomCentre)"/>
         <button class="origin-select-button" :class="{selected: value === Origin.BottomRight}"
-                @click="param.set(Origin.BottomRight)"/>
+                @click="setParam(Origin.BottomRight)"/>
       </div>
 
     </div>
@@ -38,7 +38,11 @@ import {computed, defineProps, PropType} from "vue";
 import {Node} from "@/editor/node";
 import {NodeInterfaceItem} from "@/editor/node/interface";
 import {OriginNodeParameter} from "@/editor/node/parameter";
-import {Origin as SpriteOrigin} from "@/editor/objects/origin";
+import {Origin, Origin as SpriteOrigin} from "@/editor/objects/origin";
+import {SetNodeParameterCommand} from "@/editor/ctx/command/parameter";
+import {useContext} from "@/editor/ctx/use";
+
+const ctx = useContext()
 
 const props = defineProps({
   node: {
@@ -56,6 +60,12 @@ const Origin = SpriteOrigin
 const param = computed(() => props.node.params.get(props.interface.id) as OriginNodeParameter)
 
 const value = computed(() => param.value.get())
+
+function setParam(value: Origin) {
+  ctx.executeCommand(
+      new SetNodeParameterCommand(ctx, props.node.path, props.interface.id, value)
+  )
+}
 
 </script>
 

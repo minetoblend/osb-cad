@@ -10,6 +10,10 @@ export class NodePath {
         return this.parts[0]
     }
 
+    get leaf() {
+        return this.parts[this.parts.length - 1]
+    }
+
     shift() {
         return new NodePath(this.parts.slice(1))
     }
@@ -33,7 +37,7 @@ export class NodePath {
     }
 
     get hasParent() {
-        return this.parts.length > 1
+        return this.parts.length > 0
     }
 
     get parent(): NodePath | undefined {
@@ -60,4 +64,7 @@ export class NodePath {
     }
 
 
+    static fromString(activePath: string) {
+        return new NodePath(activePath.split('/').filter(it => it.trim().length > 0));
+    }
 }

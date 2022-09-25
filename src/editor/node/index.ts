@@ -7,13 +7,31 @@ import type {NodeSystem} from "@/editor/node/system";
 import {NodeInterfaceBuilder, NodeInterfaceItem} from "@/editor/node/interface";
 import {EditorContext} from "@/editor/ctx/context";
 import {CircularDependencyError, NodeError} from "@/editor/node/error";
-import {NodeConnection} from "@/editor/node/connection";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {ExpressionDependency} from "@/editor/compile";
-import {SerializedNode} from "@/editor/ctx/serialize";
-
+import type {SerializedNode} from "@/editor/ctx/serialize";
+import {Deserializer} from "@/editor/ctx/serialize";
+import {NodeInput, NodeOutput} from "@/editor/node/input";
+import {DragOptions} from "@/util/event";
+import {NodeDependency} from "@/editor/node/dependency";
+import {MarkDirtyReason} from "@/editor/node/markDirty";
 
 export abstract class Node implements IHasPosition {
+    abstract icon: string[]
+    readonly name: Ref<string>
+    readonly position = ref(Vec2.zero())
+    readonly size = ref(new Vec2(120, 30))
+    readonly status = ref(NodeStatus.Dirty)
+    readonly isCooking = ref(false)
+
+    errors = shallowRef<NodeError[]>([])
+    parent?: NodeSystem<any>
+    inputs: NodeInput[] = []
+    outputs: NodeOutput[] = []
+    readonly interface: NodeInterfaceItem[] = []
+    protected readonly dependencies = new Set<ExpressionDependency>()
+    resultCache: any[] | null = null
+
     constructor(readonly ctx: EditorContext, name: string) {
         this.name = ref(name)
 
@@ -21,57 +39,14 @@ export abstract class Node implements IHasPosition {
             const builder = new NodeBuilder(this, this.inputs, this.outputs)
             this.define(builder)
         }
+
+        this.updateDependencies()
     }
 
-    abstract icon: string[]
-
-    abstract cook(ctx: CookContext): Promise<CookResult>
-
-    abstract type: string
-
-    define?(builder: NodeBuilder): void
-
-    readonly name: Ref<string>
-    readonly position = ref(Vec2.zero())
-    readonly size = ref(new Vec2(120, 30))
-    readonly status = ref(NodeStatus.Dirty)
-    errors = shallowRef<NodeError[]>([])
-
-    parent?: NodeSystem<any>
-
-    inputs: NodeInput[] = []
-    outputs: NodeOutput[] = []
     protected _params = new Map<string, NodeParameter>()
-
-    readonly interface: NodeInterfaceItem[] = []
-
-    private readonly dependencies = new Set<ExpressionDependency>()
-
-    private resultCache: any[] = []
-
-    getOutput(index: number): any {
-        return this.resultCache[index]
-    }
-
-    updateDependencies() {
-        this.dependencies.clear()
-        this.params.forEach(it => {
-            it.getDependencies().forEach(dependency => this.dependencies.add(dependency))
-        })
-    }
 
     get params(): ReadonlyMap<string, NodeParameter> {
         return this._params
-    }
-
-    param(name: string): NodeParameter | undefined {
-        return this._params.get(name)
-    }
-
-    find(path: NodePath): Node | null {
-        if (path.length === 0)
-            return this
-        return null
     }
 
     get path(): NodePath {
@@ -86,6 +61,41 @@ export abstract class Node implements IHasPosition {
 
     get isOutput() {
         return this.parent?.outputNode.value === this.name.value
+    }
+
+    get isDirty() {
+        return this.status.value !== NodeStatus.Cooked
+    }
+
+    get timingInformation(): TimingInformation | undefined {
+        return undefined
+    }
+
+    abstract cook(ctx: CookContext): Promise<CookResult>
+
+    define?(builder: NodeBuilder): void
+
+    getOutput(index: number): any {
+        if (!this.resultCache)
+            return undefined
+        return this.resultCache[index]
+    }
+
+    updateDependencies() {
+        this.dependencies.clear()
+        this.params.forEach(it => {
+            it.getDependencies().forEach(dependency => this.dependencies.add(dependency))
+        })
+    }
+
+    param(name: string): NodeParameter | undefined {
+        return this._params.get(name)
+    }
+
+    find(path: NodePath): Node | null {
+        if (path.length === 0)
+            return this
+        return null
     }
 
     isInRect(min: Vec2, max: Vec2) {
@@ -110,7 +120,7 @@ export abstract class Node implements IHasPosition {
         return dependencies
     }
 
-    findDirtyDependenciesDeep(visited = new Set<Node>()) {
+    findDependenciesForCooking(visited = new Set<Node>()) {
         if (visited.has(this)) {
             const path = [...visited]
             const index = path.indexOf(this)
@@ -118,23 +128,22 @@ export abstract class Node implements IHasPosition {
         }
         visited.add(this)
 
-        const dependencies: Node[] = []
+        const dependencies: NodeDependency[] = []
 
         if (this.parent) {
-            const connections = this.parent!.getConnectionsLeadingTo(this)
-
-            for (let connection of connections) {
-                if (connection.from.node.isDirty) {
-                    dependencies.push(...connection.from.node.findDirtyDependenciesDeep(new Set(visited)))
-                    dependencies.push(connection.from.node)
-                }
-            }
+            this.inputs.forEach((input, inputIndex) => {
+                const connections = input.connections
+                connections.forEach((connection) => {
+                    dependencies
+                        .push(new NodeDependency(connection.from.node, inputIndex, connection.from.index))
+                })
+            })
         }
 
         return dependencies
     }
 
-    markDirty(visited: Set<Node> = new Set<Node>()) {
+    markDirty(reason?: MarkDirtyReason, visited: Set<Node> = new Set<Node>()) {
         if (visited.has(this))
             return;
 
@@ -146,52 +155,34 @@ export abstract class Node implements IHasPosition {
 
         const dependants = this.findDependants()
 
-        dependants.forEach(it => it.markDirty(visited))
+        dependants.forEach(it => it.markDirty(reason, visited))
 
         if (this.isOutput)
-            this.parent?.markDirty(visited)
-    }
-
-    private findDependants(deep: boolean = false) {
-        const dependants: Node[] = []
-        for (let output of this.outputs) {
-            const connections = this.parent!.getConnectionsComingFrom(output)
-            for (let connection of connections) {
-                if (deep)
-                    dependants.push(...connection.to.node.findDependants())
-                dependants.push(connection.to.node)
-
-            }
-        }
-        return dependants
+            this.parent?.markDirty(reason, visited)
     }
 
     addParameter(parameter: NodeParameter) {
         this._params.set(parameter.id, parameter)
     }
 
-    get isDirty() {
-        return this.status.value !== NodeStatus.Cooked
-    }
-
     destroy() {
-
+        console.log(`${this.path} destroyed`)
     }
 
     findDependencies() {
         return this.parent?.getConnectionsLeadingTo(this).map(it => it.from.node) ?? []
     }
 
-    setResultCache(resultCache: any[]) {
-        this.resultCache = resultCache
-    }
-
-    hasDependency(dependency: ExpressionDependency) {
-        return this.dependencies.has(dependency)
+    hasDependency(...dependency: ExpressionDependency[]) {
+        return dependency.some(d => this.dependencies.has(d))
     }
 
     chv2(name: string, ctx?: GetWithElementContext): Vec2 {
         if (ctx) {
+            return new Vec2(
+                this.param(`${name}.x`)!.getWithElement(ctx),
+                this.param(`${name}.y`)!.getWithElement(ctx)
+            )
 
         }
         return new Vec2(
@@ -212,45 +203,57 @@ export abstract class Node implements IHasPosition {
     }
 
     serialize(): SerializedNode {
+        const params = [...this.params.keys()].map(key =>
+            this.params.get(key)!.serialize()
+        )
+
         return {
             type: this.type,
             name: this.name.value,
-            position: this.position.value
+            position: this.position.value,
+            parameters: params
         }
     }
-}
 
-export class NodeInput<N extends Node = Node> {
-    constructor(
-        public readonly node: N,
-        public name: string,
-        public index: number,
-        public multiple: boolean,
-    ) {
+    initFromData(data: Partial<SerializedNode>, deserializer: Deserializer) {
+
     }
 
-    connections: NodeConnection<N>[] = []
+    private findDependants(deep: boolean = false) {
+        const dependants: Node[] = []
+        for (let output of this.outputs) {
+            const connections = this.parent?.getConnectionsComingFrom(output) ?? []
+            for (let connection of connections) {
+                if (deep)
+                    dependants.push(...connection.to.node.findDependants())
+                dependants.push(connection.to.node)
 
-    getValue(): any {
-        if (this.multiple)
-            return this.connections.map(it => it.from.node.getOutput(this.connections[0].from.index))
-        if (this.connections.length)
-            return this.connections[0].from.node.getOutput(this.connections[0].from.index)
+            }
+        }
+        return dependants
+    }
 
-        return undefined
+    getDependenciesInParent() {
+        const dependencies = new Set<Node>()
+
+        this.inputs.forEach(input => input.connections.forEach(connection => {
+            if (connection.circular.value)
+                return;
+
+            dependencies.add(connection.from.node)
+            connection.from.node.getDependenciesInParent().forEach(dependency =>
+                dependencies.add(dependency)
+            )
+        }))
+
+        return dependencies
+    }
+
+    get type(): string {
+        return this.constructor.name
     }
 }
 
-export class NodeOutput<N extends Node = Node> {
-    constructor(
-        public readonly node: N,
-        public name: string,
-        public index: number,
-    ) {
-    }
-
-    connections: NodeConnection<N>[] = []
-}
 
 export class NodeBuilder {
     constructor(
@@ -276,17 +279,17 @@ export class NodeBuilder {
         return this
     }
 
-    output(name: string = `Input${this.nodeOutputs.length + 1}`): NodeBuilder {
+    output(name: string = `Output${this.nodeOutputs.length + 1}`): NodeBuilder {
         this.nodeOutputs.push(new NodeOutput(this.node, name, this.nodeOutputs.length))
         return this
     }
 
-    outputs(inputs: number | string[]): NodeBuilder {
-        if (Array.isArray(inputs))
-            inputs.forEach(input => this.output(input))
+    outputs(outputs: number | string[]): NodeBuilder {
+        if (Array.isArray(outputs))
+            outputs.forEach(input => this.output(input))
         else {
-            for (let i = 0; i < inputs; i++) {
-                this.output(`Input${i + this.nodeOutputs.length + 1}`)
+            for (let i = 0; i < outputs; i++) {
+                this.output(`Output${i + this.nodeOutputs.length + 1}`)
             }
         }
         return this
@@ -300,8 +303,22 @@ export class NodeBuilder {
 
 export enum NodeStatus {
     Dirty,
-    Cooking,
     Cooked,
     Error,
 }
 
+export interface TimingInformation {
+    startTime: number
+    endTime: number
+    keyframes: KeyframeInformation []
+    type: 'animation' | 'clip' | 'beatmap',
+    drag?: Partial<Pick<DragOptions, 'onDrag' | 'onDragStart' | 'onDragEnd'>>
+}
+
+export interface KeyframeInformation {
+    time: number
+    label?: string
+    drag?: Partial<Pick<DragOptions, 'onDrag' | 'onDragStart' | 'onDragEnd'>>
+    type?: string
+    duration?: number
+}

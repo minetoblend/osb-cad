@@ -20,14 +20,20 @@ export class CommandHistory {
         if (!lastCommand)
             return false;
 
-        if (lastCommand.createUndo) {
-            const redo = lastCommand.createUndo()
+        console.log(lastCommand)
+
+        let redo;
+        if (lastCommand.createUndo)
+            redo = lastCommand.createUndo()
+
+        if (redo)
             this.future.push(redo)
-        } else {
-            this.clearFuture()
-        }
+        else
+            this.clearPast()
 
         lastCommand.execute()
+
+        this.ctx.save()
 
         return true;
     }
@@ -37,21 +43,33 @@ export class CommandHistory {
         if (!nextCommand)
             return false;
 
-        if (nextCommand.createUndo) {
-            const undo = nextCommand.createUndo()
-            this.past.push(undo)
-        } else {
+        let undo;
+        if (nextCommand.createUndo)
+            undo = nextCommand.createUndo()
+
+        if (undo)
+            this.push(undo)
+        else
             this.clearPast()
-        }
 
         nextCommand.execute()
+
+        this.ctx.save()
 
         return true;
     }
 
-    onCommandExecute(command: EditorCommand) {
+    execute(command: EditorCommand) {
+        let undo;
         if (command.createUndo)
-            this.push(command.createUndo())
+            undo = command.createUndo()
+
+        const hadEffect = command.execute()
+        if (!hadEffect)
+            return;
+
+        if (undo)
+            this.push(undo)
         else
             this.clearPast()
     }

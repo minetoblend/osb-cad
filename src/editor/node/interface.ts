@@ -6,7 +6,10 @@ import {
     IntParamOptions,
     NodeParameter,
     OriginNodeParameter,
-    OriginParamOptions, Vec2ParamOptions
+    OriginParamOptions,
+    StringNodeParameter,
+    StringParamOptions,
+    Vec2ParamOptions,
 } from "@/editor/node/parameter";
 import ParamCodeEditor from '@/components/node/parameters/ParamCodeEditor.vue'
 import NodeParamVec2 from '@/components/node/parameters/NodeParamVec2.vue'
@@ -15,6 +18,8 @@ import NodeParamFloat from '@/components/node/parameters/NodeParamFloat.vue'
 import NodeParamOrigin from '@/components/node/parameters/NodeParamOrigin.vue'
 import NodeParamColor from '@/components/node/parameters/NodeParamColor.vue'
 import NodeParamSprite from '@/components/node/parameters/NodeParamSprite.vue'
+import NodeParamBool from '@/components/node/parameters/NodeParamBool.vue'
+import NodeParamString from '@/components/node/parameters/NodeParamString.vue'
 
 import {Color, Vec2} from "@/util/math";
 import {Origin} from "@/editor/objects/origin";
@@ -74,6 +79,19 @@ export class FloatInterfaceItem extends NodeInterfaceItem {
     }
 }
 
+
+export class BoolInterfaceItem extends NodeInterfaceItem {
+    constructor(
+        id: string,
+        label: string) {
+        super(id, label)
+    }
+
+    get component() {
+        return NodeParamBool
+    }
+}
+
 export class Vec2InterfaceItem extends NodeInterfaceItem {
     constructor(
         id: string,
@@ -109,6 +127,18 @@ export class CodeEditorInterfaceItem extends NodeInterfaceItem {
 }
 
 
+class StringInterfaceItem extends NodeInterfaceItem {
+    constructor(
+        id: string,
+        label: string) {
+        super(id, label)
+    }
+
+    get component() {
+        return NodeParamString
+    }
+}
+
 export class NodeInterfaceBuilder {
     constructor(private readonly node: Node) {
     }
@@ -124,13 +154,24 @@ export class NodeInterfaceBuilder {
         return this
     }
 
-    sprite(id: string, label: string, opts?: Partial<IntParamOptions>) {
+    bool(id: string, label: string, opts?: Partial<IntParamOptions>) {
         opts = {
             withIndex: false,
             defaultValue: 0,
             ...opts ?? {},
         }
         this.node.addParameter(NodeParameter.int(this.node, id, opts as IntParamOptions))
+        this.node.interface.push(new BoolInterfaceItem(id, label))
+        return this
+    }
+
+    sprite(id: string, label: string, opts?: Partial<StringParamOptions>) {
+        opts = {
+            withIndex: false,
+            defaultValue: '',
+            ...opts ?? {},
+        }
+        this.node.addParameter(new StringNodeParameter(this.node, id, opts as StringParamOptions))
         this.node.interface.push(new SpriteInterfaceItem(id, label))
         return this
     }
@@ -174,7 +215,7 @@ export class NodeInterfaceBuilder {
             withIndex: opts.withIndex!
         }))
         this.node.addParameter(new FloatNodeParameter(this.node, id + '.y', {
-            defaultValue: opts.defaultValue!.x,
+            defaultValue: opts.defaultValue!.y,
             withIndex: opts.withIndex!
         }))
 
@@ -202,6 +243,17 @@ export class NodeInterfaceBuilder {
         }))
 
         this.node.interface.push(new ColorInterfaceItem(id, label))
+        return this
+    }
+
+    string(id: string, label: string, opts?: Partial<StringParamOptions>) {
+        opts = {
+            withIndex: false,
+            defaultValue: '',
+            ...opts ?? {}
+        }
+        this.node.addParameter(new StringNodeParameter(this.node, id, opts as StringParamOptions))
+        this.node.interface.push(new StringInterfaceItem(id, label))
         return this
     }
 }

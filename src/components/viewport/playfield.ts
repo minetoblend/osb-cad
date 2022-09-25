@@ -1,12 +1,14 @@
 import * as PIXI from 'pixi.js'
 import {EditorContext} from "@/editor/ctx/context";
-import {ShallowRef, watch} from "vue";
+import {ShallowRef} from "vue";
 import {SBCollection} from "@/editor/objects/collection";
 import {StoryboardElementContainer} from "@/components/viewport/element";
 
 export class PlayfieldContainer extends PIXI.Container {
     private geometry: ShallowRef<SBCollection | undefined>;
     private spriteContainer: PIXI.Container
+
+    private visualizer: PIXI.Graphics
 
     constructor(readonly ctx: EditorContext) {
         super();
@@ -31,12 +33,12 @@ export class PlayfieldContainer extends PIXI.Container {
         this.addChild(this.spriteContainer)
         this.addChild(g)
 
-        watch(this.geometry, geometry => this.updateSprites(geometry))
-        watch(this.ctx.time, time => this.updateTime(time))
+        this.visualizer = new PIXI.Graphics()
+        this.addChild(this.visualizer)
     }
 
 
-    updateSprites(geometry: SBCollection | undefined) {
+    updateSprites(geometry: SBCollection | undefined, time: number = this.ctx.time.value) {
         if (!geometry) {
             this.spriteContainer.removeChildren().forEach(it => it.destroy({children: true}))
             return;
@@ -46,13 +48,9 @@ export class PlayfieldContainer extends PIXI.Container {
         }
         geometry.elements.forEach((element, index) => {
             if (!this.spriteContainer.children[index])
-                this.spriteContainer.addChild(new StoryboardElementContainer(this.ctx, element));
+                this.spriteContainer.addChild(new StoryboardElementContainer(this.ctx, element, time));
             else
-                (this.spriteContainer.children[index] as StoryboardElementContainer).updateFrom(element)
+                (this.spriteContainer.children[index] as StoryboardElementContainer).updateFrom(element, time)
         })
-    }
-
-    private updateTime(time: number) {
-        this.spriteContainer.children.forEach(it => (it as StoryboardElementContainer).update(time))
     }
 }

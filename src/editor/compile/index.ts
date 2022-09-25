@@ -4,6 +4,9 @@ import generate from "@babel/generator";
 import {createCodeBlockVisitor, createExpressionVisitor} from "@/editor/compile/visit";
 import {lerp, Vec2, Vec2Like} from "@/util/math";
 import {SBElement} from "@/editor/objects";
+import {SBCollection} from "@/editor/objects/collection";
+import {createStatementBaseContext, createStatementContext} from "@/editor/compile/ctx";
+import Prando from "prando";
 
 
 export const globalFunctions: GlobalFunctions = {
@@ -23,7 +26,12 @@ export const globalFunctions: GlobalFunctions = {
         a.y + (b.y - a.y) * f,
     ),
     vec2(x: number, y: number): Vec2Like {
-        return {x, y}
+        return new Vec2(x, y)
+    },
+    rand(seed: number, min = 0, max = 1) {
+        const rand = new Prando(seed)
+        rand.skip(seed + 10)
+        return rand.next(min, max)
     }
 }
 
@@ -53,6 +61,14 @@ export interface GlobalFunctions {
     lerpv(a: Vec2, b: Vec2, f: number): Vec2
 
     vec2(x: number, y: number): Vec2Like;
+
+    rand(seed: number): number
+}
+
+export interface GlobalValues {
+    TIME: number,
+    CENTRE: Vec2
+    DELTA: number
 }
 
 export const builtinExpressionMethods = new Set<string>([
@@ -69,13 +85,23 @@ export function compileStatements(code: string) {
     const attributes = new Set<string>()
     const dependencies = new Set<ExpressionDependency>()
 
-    const ast = parser.parse('(ctx, idx) => {' + code.trim() + ' }')
+    code = '(ctx, idx) => {\n' + code.trim() + '\n}'
 
-    traverse(ast, {
-        ...createCodeBlockVisitor(attributes, dependencies, builtinStatementMethods)
+    const ast = parser.parse(code, {
+        sourceFilename: 'code.js'
     })
 
-    const transformedCode = generate(ast)
+    traverse(ast, {
+        ...createCodeBlockVisitor(attributes, dependencies, builtinStatementMethods),
+    })
+
+    const transformedCode = generate(ast, {
+        sourceMaps: true
+    }, {
+        'code.js': code
+    })
+    console.log(transformedCode.map)
+    console.log(transformedCode.code)
     const compiledFunction = eval(transformedCode.code)
     return new CompiledCodeBlock(compiledFunction, attributes, dependencies)
 }
@@ -94,12 +120,17 @@ export function compileExpression(expression: string, withIndex: boolean): Compi
     const transformedCode = generate(ast)
     const compiledFunction = eval(transformedCode.code)
 
+    console.log(transformedCode)
+
     return new CompiledExpression(compiledFunction, expression, attributes, dependencies)
 }
 
 export enum ExpressionDependency {
     ElementIndex,
     Time,
+    Texture,
+    Beatmap,
+
 }
 
 export const Globals = new Set<string>(
@@ -107,8 +138,18 @@ export const Globals = new Set<string>(
 );
 
 export class CompiledCodeBlock {
-    constructor(readonly expression: (ctx: any, idx: number) => any, readonly attribtues: Set<string>, readonly dependencies: Set<ExpressionDependency>) {
+    constructor(readonly expression: (ctx: any, idx: number) => any, readonly attributes: Set<string>, readonly dependencies: Set<ExpressionDependency>) {
+        console.log(expression)
     }
+
+    run(globals: GlobalValues, inputs: SBCollection[]) {
+        const baseCtx = createStatementBaseContext(globals)
+        inputs[0]?.forEach(idx => {
+            const ctx = createStatementContext(baseCtx, inputs)
+            this.expression(ctx, idx)
+        })
+    }
+
 }
 
 export class CompiledExpression {
@@ -141,6 +182,8 @@ export class CompiledExpression {
             ...ctx,
             ...globalFunctions
         }
+
+        //console.log(combinedCtx)
 
         if (idx === undefined) {
             return this.expression(combinedCtx, el, -1)

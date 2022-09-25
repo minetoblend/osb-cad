@@ -1,12 +1,17 @@
 declare const electronAPI: {
     handleUndo(handler: () => void)
     handleRedo(handler: () => void)
-    loadBeatmapFiles(path: string): {
-        images: {
-            filename: string,
-            data: Uint8Array
-        }[]
-    }
+    writeFile(path: string, contents: string): Promise<void>
+    readTextFile(path: string): Promise<string>
+    readFile(path: string): Promise<Blob>
+    isDir(path: string): Promise<boolean>
+    readDir(path: string): Promise<string[]>
+    fileExists(path: string): Promise<boolean>
+    getOsuSongsDirectory(): string | undefined
+    selectDirectory(defaultPath?: string): Promise<{ canceled: boolean, filePaths: string[] | undefined }>
+    openFileDialog(opts?: any): Promise<{ canceled: boolean, filePaths: string[] | undefined }>
+    saveFileDialog(opts?: any): Promise<{ canceled: boolean, filePath: string | undefined }>
+
 }
 
 type IfEquals<X, Y, A = X, B = never> =
@@ -15,3 +20,31 @@ type IfEquals<X, Y, A = X, B = never> =
 type WritableKeys<T> = {
     [P in keyof T]-?: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P>
 }[keyof T];
+
+type Constructor<T> = {
+    new(...args: any): T
+}
+
+declare module 'osu-parser' {
+    function parseContent(content: string): BeatmapData;
+}
+
+interface BeatmapData {
+    hitObjects: HitObjectData[]
+    Version: string
+}
+
+interface HitObjectData {
+    position: [number, number]
+    startTime: number
+    objectName: 'circle' | 'slider' | 'spinner'
+    duration?: number
+}
+
+type Clonable<T = any> = {
+    clone(): T
+}
+
+declare module 'vue-dock-menu' {
+    declare let DockMenu: any
+}

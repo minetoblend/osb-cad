@@ -22,9 +22,9 @@ export class AnimatedValue<T extends IHasMathOperations<T>> {
     }
 
 
-    valueAt(time: number): T {
+    valueAt(time: number, defaultValue: T = this.initialValue): T {
         if (this.commands.length === 0)
-            return this.initialValue
+            return defaultValue
 
         let {index, found} = this.findCommandIndex(time)
         if (!found && index > 0)
@@ -61,4 +61,21 @@ export class AnimatedValue<T extends IHasMathOperations<T>> {
             it.endTime += amount
         })
     }
+
+    deleteCommandsBefore(time: number) {
+        this.commands = this.commands.filter(it => it.endTime <= time)
+    }
+
+    deleteCommandsAfter(time: number) {
+        this.commands = this.commands.filter(it => it.startTime >= time)
+    }
+
+    get startTime() {
+        return this.commands[0]?.startTime ?? NaN
+    }
+
+    get endTime() {
+        return this.commands[this.commands.length - 1]?.endTime ?? NaN
+    }
+
 }

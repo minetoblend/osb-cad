@@ -1,11 +1,11 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
-import {SBCollection} from "@/editor/objects/collection";
 import {NodeBuilder} from "@/editor/node";
+import {RegisterNode} from "@/editor/node/registry";
 
+@RegisterNode('Offset', ['fas', 'clock'], 'animation')
 export class OffsetNode extends ElementNode {
-    type = 'offset¶'
     icon = ['fas', 'clock']
 
     constructor(ctx: EditorContext) {
@@ -23,13 +23,12 @@ export class OffsetNode extends ElementNode {
 
     async cook(ctx: CookContext): Promise<CookResult> {
 
-        const geo = ctx.input[0] as SBCollection
+        const geo = ctx.getInput()
 
         const amount = this.param('amount')!
 
         geo.forEach((idx, el) => {
-
-            el.offsetAnimation(amount.getWithElement({idx, el, geo: ctx.input}))
+            el.offsetAnimation(amount.getWithElement({idx, el, geo: ctx.getInputs()}))
         })
 
         return CookResult.success(geo);

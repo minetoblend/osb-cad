@@ -1,10 +1,10 @@
 <template>
   <div class="component-row">
-    <el-select :model-value="spriteName" @update:model-value="param.set($event)">
-      <el-option :value="-1">
+    <el-select :model-value="spriteName" @update:model-value="param.set($event)" clearable>
+      <template #empty>
         None
-      </el-option>
-      <el-option v-for="(sprite, index) in sprites" :key="index" :value="index" class="sprite-selectitem">
+      </template>
+      <el-option v-for="(sprite, index) in sprites" :key="index" :value="sprite.name" class="sprite-selectitem">
         <img :src="sprite.url" alt="">
         {{ sprite.name }}
       </el-option>
@@ -41,21 +41,21 @@ watch(param, () => {
   loadValues()
 })
 
-const sprites = computed(() => ctx.textureStore.textures)
+const sprites = computed(() => ctx.fileStore.textures)
 
 function loadValues() {
   if (param.value) {
-    value.value = param.value.getText()
+    value.value = param.value.get()
   }
 }
 
-const spriteName = computed(() => sprites.value[param.value.get()]?.name ?? 'None')
+const spriteName = computed(() => param.value.get() ?? 'None')
 
 loadValues()
 
 function commitValue() {
-  param.value.setText(value.value)
-  value.value = param.value.getText()
+  param.value.set(value.value)
+  value.value = param.value.get()
 }
 
 loadValues()

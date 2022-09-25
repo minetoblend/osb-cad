@@ -1,11 +1,12 @@
-import {ElementNode} from "@/editor/node/element/index";
+import {ElementNode} from "@/editor/node/element";
 import {NodeBuilder} from "@/editor/node";
 import {EditorContext} from "@/editor/ctx/context";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
+import {RegisterNode} from "@/editor/node/registry";
 
+@RegisterNode('Merge', ['fas', 'down-left-and-up-right-to-center'], 'general')
 export class MergeNode extends ElementNode {
-    type = 'merge'
     icon = ['fas', 'down-left-and-up-right-to-center']
 
     constructor(ctx: EditorContext) {
@@ -20,7 +21,8 @@ export class MergeNode extends ElementNode {
 
     async cook(ctx: CookContext): Promise<CookResult> {
 
-        const geos = (ctx.input[0] as SBCollection[])
+        const geos = ctx.getInputMultiple()
+
         const geo = geos.shift() ?? new SBCollection()
 
         geos.forEach(it => geo.append(it))

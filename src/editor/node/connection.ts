@@ -1,7 +1,8 @@
-import {Node, NodeInput, NodeOutput} from "@/editor/node/index";
+import {Node} from "@/editor/node/index";
 import {v4 as uuid} from 'uuid'
 import {ref} from "vue";
 import {SerializedConnection} from "@/editor/ctx/serialize";
+import {NodeInput, NodeOutput} from "@/editor/node/input";
 
 export class NodeConnection<N extends Node = Node> {
     constructor(public from: NodeOutput<N>, public to: NodeInput<N>) {
@@ -23,4 +24,7 @@ export class NodeConnection<N extends Node = Node> {
         }
     }
 
+    get isSelected(): boolean {
+        return !!this.from.node.parent?.isConnectionSelected(this)
+    }
 }

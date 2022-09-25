@@ -83,8 +83,9 @@ export class Vec2 implements IHasMathOperations<Vec2> {
         return this.x * this.x + this.y * this.y;
     }
 
-    clone() {
-        return new Vec2(this.x, this.y)
+    get normalized() {
+        const l = this.length
+        return this.divF(l)
     }
 
     static zero() {
@@ -97,6 +98,10 @@ export class Vec2 implements IHasMathOperations<Vec2> {
 
     static playfieldCentre() {
         return new Vec2(320, 240)
+    }
+
+    clone() {
+        return new Vec2(this.x, this.y)
     }
 
     add({x, y}: Vec2) {
@@ -164,9 +169,14 @@ export class Vec2 implements IHasMathOperations<Vec2> {
         )
     }
 
-    set(x: number, y: number) {
-        this.x = x
-        this.y = y
+    set(x: number | Vec2, y?: number) {
+        if (x instanceof Vec2) {
+            this.x = x.x
+            this.y = x.y
+        } else {
+            this.x = x
+            this.y = y ?? this.y
+        }
     }
 
     move(rhs: Vec2) {
@@ -191,10 +201,30 @@ export class Vec2 implements IHasMathOperations<Vec2> {
     toString() {
         return `(${this.x}, ${this.y})`
     }
+
+    static from(from: Vec2Like) {
+        return new Vec2(from.x, from.y)
+    }
+
+    equals(rhs: Vec2) {
+        return this.x === rhs.x && this.y === rhs.y
+    }
 }
 
 export class Line {
     constructor(public from: Vec2, public to: Vec2) {
+    }
+
+    get length() {
+        return this.from.sub(this.to).length
+    }
+
+    get angle() {
+        let dir = this.to.sub(this.from).normalized
+        return Math.atan2(
+            dir.y,
+            dir.x
+        )
     }
 }
 
@@ -234,6 +264,21 @@ export function getTangentsOf2Circles(center1: Vec2, rad1: number, center2: Vec2
 
 export class Color implements IHasMathOperations<Color> {
     constructor(public r: number, public g: number, public b: number) {
+    }
+
+    static get white(): Color {
+        return new Color(1, 1, 1);
+    }
+
+    static get black(): Color {
+        return new Color(0, 0, 0);
+    }
+
+    get hex() {
+        let r = clamp(this.r, 0, 1) * 255
+        let g = clamp(this.g, 0, 1) * 255
+        let b = clamp(this.b, 0, 1) * 255
+        return (r << 16) | (g << 8) | b
     }
 
     add(rhs: Color): Color {
@@ -278,22 +323,6 @@ export class Color implements IHasMathOperations<Color> {
 
     subF(rhs: number): Color {
         return new Color(this.r - rhs, this.g - rhs, this.b - rhs);
-    }
-
-
-    get hex() {
-        let r = clamp(this.r, 0, 1) * 255
-        let g = clamp(this.g, 0, 1) * 255
-        let b = clamp(this.b, 0, 1) * 255
-        return (r << 16) | (g << 8) | b
-    }
-
-    static get white(): Color {
-        return new Color(1, 1, 1);
-    }
-
-    static get black(): Color {
-        return new Color(0, 0, 0);
     }
 }
 

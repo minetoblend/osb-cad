@@ -1,50 +1,104 @@
 import {Color, Float, Vec2} from "@/util/math";
 import {Origin} from "@/editor/objects/origin";
 import {AnimatedValue} from "@/editor/objects/animation";
-import {ColorCommand, FadeCommand, MoveCommand, RotateCommand, ScaleCommand} from "@/editor/objects/command";
+import {
+    ColorCommand,
+    FadeCommand,
+    MoveCommand,
+    RotateCommand,
+    ScaleCommand,
+    ScaleVecCommand
+} from "@/editor/objects/command";
 import {Easing} from "@/editor/objects/easing";
 
 
 export class SBElement {
     constructor(pos: Vec2, origin: Origin, sprite: number, scale: Vec2) {
-        this.pos = pos;
+        this._pos = pos;
         this._origin = origin;
         this._sprite = sprite;
         this._scale = scale;
-        this.moveTimeline = new AnimatedValue<Vec2>(this.pos)
-        this.moveXTimeline = new AnimatedValue<Float>(new Float(this.pos.x))
-        this.moveYTimeline = new AnimatedValue<Float>(new Float(this.pos.y))
-        this.scaleTimeline = new AnimatedValue<Float>(new Float(this._scale.x))
-        this.scaleVecTimeline = new AnimatedValue<Vec2>(this._scale)
-        this.rotateTimeline = new AnimatedValue<Float>(new Float(0))
-        this.fadeTimeline = new AnimatedValue<Float>(new Float(1))
-        this.colorTimeline = new AnimatedValue<Color>(Color.white)
+        //this.moveTimeline = new AnimatedValue<Vec2>(this._pos)
+        //this.moveXTimeline = new AnimatedValue<Float>(new Float(this._pos.x))
+        //this.moveYTimeline = new AnimatedValue<Float>(new Float(this._pos.y))
+        //this.scaleTimeline = new AnimatedValue<Float>(new Float(this._scale.x))
+        //this.scaleVecTimeline = new AnimatedValue<Vec2>(this._scale)
+        //this.rotateTimeline = new AnimatedValue<Float>(new Float(0))
+        //this.fadeTimeline = new AnimatedValue<Float>(new Float(1))
+        //this.colorTimeline = new AnimatedValue<Color>(Color.white)
     }
 
-    pos: Vec2
+    _pos: Vec2
+    _rotation: number = 0
+    _color: Color = Color.white
+    _alpha: number = 1
     _origin: Origin
     _sprite: number
     _scale: Vec2
 
-    private moveTimeline: AnimatedValue<Vec2>
-    private moveXTimeline: AnimatedValue<Float>
-    private moveYTimeline: AnimatedValue<Float>
-    private scaleTimeline: AnimatedValue<Float>
-    private scaleVecTimeline: AnimatedValue<Vec2>
-    private rotateTimeline: AnimatedValue<Float>
-    private fadeTimeline: AnimatedValue<Float>
-    private colorTimeline: AnimatedValue<Color>
+    private _moveTimeline?: AnimatedValue<Vec2>
+    private _moveXTimeline?: AnimatedValue<Float>
+    private _moveYTimeline?: AnimatedValue<Float>
+    private _scaleTimeline?: AnimatedValue<Float>
+    private _scaleVecTimeline?: AnimatedValue<Vec2>
+    private _rotateTimeline?: AnimatedValue<Float>
+    private _fadeTimeline?: AnimatedValue<Float>
+    private _colorTimeline?: AnimatedValue<Color>
+
+
+    get moveTimeline() {
+        if (!this._moveTimeline) this._moveTimeline = new AnimatedValue<Vec2>(this._pos);
+        return this._moveTimeline
+    }
+
+    get moveXTimeline() {
+        if (!this._moveXTimeline) this._moveXTimeline = new AnimatedValue<Float>(new Float(this._pos.x));
+        return this._moveXTimeline
+    }
+
+    get moveYTimeline() {
+        if (!this._moveYTimeline) this._moveYTimeline = new AnimatedValue<Float>(new Float(this._pos.y));
+        return this._moveYTimeline
+    }
+
+    get scaleTimeline() {
+        if (!this._scaleTimeline) this._scaleTimeline = new AnimatedValue<Float>(new Float(this._scale.x));
+        return this._scaleTimeline
+    }
+
+    get scaleVecTimeline() {
+        if (!this._scaleVecTimeline) this._scaleVecTimeline = new AnimatedValue<Vec2>(this._scale);
+        return this._scaleVecTimeline
+    }
+
+    get rotateTimeline() {
+        if (!this._rotateTimeline) this._rotateTimeline = new AnimatedValue<Float>(new Float(0));
+        return this._rotateTimeline
+    }
+
+    get fadeTimeline() {
+        if (!this._fadeTimeline) this._fadeTimeline = new AnimatedValue<Float>(new Float(1));
+        return this._fadeTimeline
+    }
+
+    get colorTimeline() {
+        if (!this._colorTimeline) this._colorTimeline = new AnimatedValue<Color>(Color.white);
+        return this._colorTimeline
+    }
 
 
     clone() {
-        const el = new SBElement(this.pos.clone(), this._origin, this._sprite, this._scale.clone())
-        el.moveTimeline = this.moveTimeline.clone()
-        el.moveXTimeline = this.moveXTimeline.clone()
-        el.moveYTimeline = this.moveYTimeline.clone()
-        el.scaleTimeline = this.scaleTimeline.clone()
-        el.rotateTimeline = this.rotateTimeline.clone()
-        el.fadeTimeline = this.fadeTimeline.clone()
-        el.colorTimeline = this.colorTimeline.clone()
+        const el = new SBElement(this._pos.clone(), this._origin, this._sprite, this._scale.clone())
+        el._moveTimeline = this._moveTimeline?.clone()
+        el._moveXTimeline = this._moveXTimeline?.clone()
+        el._moveYTimeline = this._moveYTimeline?.clone()
+        el._scaleTimeline = this._scaleTimeline?.clone()
+        el._rotateTimeline = this._rotateTimeline?.clone()
+        el._fadeTimeline = this._fadeTimeline?.clone()
+        el._colorTimeline = this._colorTimeline?.clone()
+        el._rotation = this._rotation
+        el._color = this._color.clone()
+        el._alpha = this._alpha
         return el
     }
 
@@ -77,6 +131,18 @@ export class SBElement {
         const easing = opts.easing ?? Easing.Linear;
 
         this.scaleTimeline.addCommand(new ScaleCommand(easing, startTime, endTime, new Float(startScale), new Float(endScale)))
+    }
+
+    scaleVec(opts: ScaleVecOptions) {
+        const endTime = opts.endTime
+        const startTime = opts.startTime ?? endTime
+
+        const endScale = opts.endScale
+        const startScale = opts.startScale ?? endScale
+
+        const easing = opts.easing ?? Easing.Linear;
+
+        this.scaleVecTimeline.addCommand(new ScaleVecCommand(easing, startTime, endTime, startScale, endScale))
     }
 
     rotate(opts: RotateOptions) {
@@ -116,34 +182,70 @@ export class SBElement {
     }
 
     getPos(time: number = 0): Vec2 {
-        if (!this.moveTimeline.hasCommands)
-            return this.pos
-        return this.moveTimeline.valueAt(time)
+        return this.moveTimeline.valueAt(time, this._pos)
     }
 
 
     getRotation(time: number = 0): number {
-        return this.rotateTimeline.valueAt(time).value
+        return this.rotateTimeline.valueAt(time, new Float(this._rotation)).value
     }
 
     getAlpha(time: number = 0): number {
-        return this.fadeTimeline.valueAt(time).value
+        if (!this.isVisibleAt(time))
+            return 0;
+        return this.fadeTimeline.valueAt(time, new Float(this._alpha)).value
+    }
+
+    isVisibleAt(time: number = 0) {
+        if (this._sprite < 0 || this.hasNoAnimation)
+            return true;
+        if (time >= this.moveTimeline.startTime && time <= this.moveTimeline.endTime)
+            return true
+        if (time >= this.moveXTimeline.startTime && time <= this.moveXTimeline.endTime)
+            return true
+        if (time >= this.moveYTimeline.startTime && time <= this.moveYTimeline.endTime)
+            return true
+        if (time >= this.scaleTimeline.startTime && time <= this.scaleTimeline.endTime)
+            return true
+        if (time >= this.scaleVecTimeline.startTime && time <= this.scaleVecTimeline.endTime)
+            return true
+        if (time >= this.rotateTimeline.startTime && time <= this.rotateTimeline.endTime)
+            return true
+        if (time >= this.fadeTimeline.startTime && time <= this.fadeTimeline.endTime)
+            return true
+        if (time >= this.colorTimeline.startTime && time <= this.colorTimeline.endTime)
+            return true
+        return false
+    }
+
+    get hasNoAnimation() {
+        return !this.moveTimeline.hasCommands &&
+            !this.moveXTimeline.hasCommands &&
+            !this.moveYTimeline.hasCommands &&
+            !this.scaleTimeline.hasCommands &&
+            !this.scaleVecTimeline.hasCommands &&
+            !this.rotateTimeline.hasCommands &&
+            !this.fadeTimeline.hasCommands &&
+            !this.colorTimeline.hasCommands
     }
 
     getColor(time: number = 0): Color {
-        return this.colorTimeline.valueAt(time)
+        return this.colorTimeline.valueAt(time, this._color ?? Color.white)
     }
 
     getScale(time: number = 0): Vec2 {
         if (this.scaleVecTimeline.hasCommands) {
-            return this.scaleVecTimeline.valueAt(time)
+            return this.scaleVecTimeline.valueAt(time, this._scale)
         }
-        const scale = this.scaleTimeline.valueAt(time)
-        return new Vec2(scale.value, scale.value)
+        if (this.scaleTimeline.hasCommands) {
+            const scale = this.scaleTimeline.valueAt(time)
+            return new Vec2(scale.value, scale.value)
+        }
+        return this._scale
     }
 
     moveWithCommands(delta: Vec2) {
-        this.pos.move(delta)
+        this._pos.move(delta)
         this.moveTimeline.initialValue.move(delta)
         this.moveTimeline.commandList.forEach(it => {
             (it as MoveCommand).startPos.move(delta);
@@ -152,7 +254,7 @@ export class SBElement {
     }
 
     moveToWithCommands(to: Vec2) {
-        const delta = to.sub(this.pos)
+        const delta = to.sub(this._pos)
         this.moveWithCommands(delta)
     }
 
@@ -165,6 +267,25 @@ export class SBElement {
         this.rotateTimeline.addOffset(amount)
         this.fadeTimeline.addOffset(amount)
         this.colorTimeline.addOffset(amount)
+    }
+
+    applyAnimationFrom(el: SBElement) {
+        if (el._moveTimeline)
+            el.moveTimeline.commandList.forEach(command => this.moveTimeline.addCommand(command))
+        if (el._moveXTimeline)
+            el.moveXTimeline.commandList.forEach(command => this.moveXTimeline.addCommand(command))
+        if (el._moveYTimeline)
+            el.moveYTimeline.commandList.forEach(command => this.moveYTimeline.addCommand(command))
+        if (el._scaleTimeline)
+            el.scaleTimeline.commandList.forEach(command => this.scaleTimeline.addCommand(command))
+        if (el._scaleVecTimeline)
+            el.scaleVecTimeline.commandList.forEach(command => this.scaleVecTimeline.addCommand(command))
+        if (el._rotateTimeline)
+            el.rotateTimeline.commandList.forEach(command => this.rotateTimeline.addCommand(command))
+        if (el._fadeTimeline)
+            el.fadeTimeline.commandList.forEach(command => this.fadeTimeline.addCommand(command))
+        if (el._colorTimeline)
+            el.colorTimeline.commandList.forEach(command => this.colorTimeline.addCommand(command))
     }
 }
 
@@ -188,6 +309,14 @@ interface ScaleOptions {
     endTime: number
     startScale?: number
     endScale: number
+}
+
+interface ScaleVecOptions {
+    easing?: Easing
+    startTime?: number
+    endTime: number
+    startScale?: Vec2
+    endScale: Vec2
 }
 
 interface RotateOptions {

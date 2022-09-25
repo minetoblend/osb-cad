@@ -1,0 +1,1 @@
+export const nodeAnimationTime = 0.13

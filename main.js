@@ -1,7 +1,9 @@
-const {app, BrowserWindow, ipcMain, Menu} = require('electron')
+const {app, BrowserWindow, ipcMain, Menu, session, dialog} = require('electron')
 const path = require("path");
 const fs = require("fs");
 const {promisify} = require("util");
+
+let mainWindow;
 
 const createWindow = () => {
     const win = new BrowserWindow({
@@ -16,14 +18,19 @@ const createWindow = () => {
             preload: path.join(__dirname, 'preload.js')
         },
     })
+    mainWindow = win;
+
     win.maximize()
     win.show()
     win.setMenu(createMenu(win))
 
+
     win.loadURL('http://localhost:8080')
+    //win.loadFile(path.join(__dirname, 'dist/index.html'), )
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+    await session.defaultSession.loadExtension(path.join(__dirname, 'vue-devtools'))
     createWindow()
 })
 
@@ -46,8 +53,30 @@ ipcMain.on('loadProject', async (evt, path) => {
     }
 })
 
+ipcMain.handle('select-directory', (evt, defaultPath) => {
+    return dialog.showOpenDialog(mainWindow, {
+        defaultPath,
+        properties: ['openDirectory']
+    })
+})
+
+ipcMain.handle('open-file-dialog', (evt, opts) => {
+    return dialog.showOpenDialog(mainWindow, {
+        ...opts,
+        properties: ['openFile']
+    })
+})
+
+
+ipcMain.handle('save-file-dialog', (evt, opts) => {
+    return dialog.showSaveDialog(mainWindow, {
+        ...opts
+    })
+})
+
+
 function createMenu(window) {
-    const menu = Menu.buildFromTemplate([
+    return Menu.buildFromTemplate([
         {
             label: 'Edit',
             submenu: [
@@ -61,11 +90,10 @@ function createMenu(window) {
                     accelerator: 'ctrl+y',
                     click: () => window.webContents.send('redo')
                 },
-                { role: 'separator' },
-                { role: 'toggleDevTools' },
+                {role: 'separator'},
+                {role: 'toggleDevTools'},
 
             ]
         }
     ])
-    return menu
 }

@@ -50,6 +50,7 @@ export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean,
             path.parentPath.replaceWith(types.callExpression(
                 types.identifier('setAttrib'),
                 [
+                    types.numericLiteral(0),
                     types.identifier('idx'),
                     types.stringLiteral(path.node.name.substring(1)),
                     (path.parent as AssignmentExpression).right,
@@ -60,10 +61,53 @@ export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean,
         path.replaceWith(types.callExpression(
             types.identifier('getAttrib'),
             [
+                types.numericLiteral(0),
                 types.identifier('idx'),
                 types.stringLiteral(path.node.name.substring(1))
             ]
         ))
+        return;
+    }
+
+    if (path.node.name.charAt(1) === '$') {
+        const typeLetter = path.node.name.charAt(0)
+        let type = {
+            i: 'numuber',
+            v: 'vec2'
+        }[typeLetter]
+        if (!type)
+            throw new Error('unknown parameter type')
+
+
+        attribtues.add(path.node.name.substring(1))
+        if (!withIndex)
+            throw Error('Cannot access individual sprites')
+        if (path.parent.type === 'AssignmentExpression' && path.key === 'left') {
+            if (!allowWrite)
+                throw new Error('Cannot write to attributes in Expression.')
+
+            path.parentPath.replaceWith(types.callExpression(
+                types.identifier('setAttrib'),
+                [
+                    types.numericLiteral(0),
+                    types.identifier('idx'),
+                    types.stringLiteral(path.node.name.substring(2)),
+                    (path.parent as AssignmentExpression).right,
+                    types.stringLiteral(type)
+                ]
+            ))
+        }
+
+        path.replaceWith(types.callExpression(
+            types.identifier('getAttrib'),
+            [
+                types.numericLiteral(0),
+                types.identifier('idx'),
+                types.stringLiteral(path.node.name.substring(2)),
+                types.stringLiteral(type)
+            ]
+        ))
+        return;
     }
 
 }

@@ -6,6 +6,7 @@ const webpack = require('webpack')
 const {defineConfig} = require('@vue/cli-service')
 module.exports = defineConfig({
     transpileDependencies: true,
+    publicPath: './',
     chainWebpack: config =>
         config.module
             .rule('wasm')
@@ -14,7 +15,7 @@ module.exports = defineConfig({
             .loader('wasm-loader'),
     configureWebpack: {
         externals: {
-            fs: 'require("fs")',
+            fs: '{}',
         },
         plugins: [
             AutoImport({
@@ -29,6 +30,8 @@ module.exports = defineConfig({
             new webpack.ProvidePlugin({
                 process: 'process/browser',
             }),
-        ]
+        ],
+        output: {
+        }
     }
 })

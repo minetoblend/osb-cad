@@ -1,14 +1,13 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
-import {SBCollection} from "@/editor/objects/collection";
 import {NodeBuilder} from "@/editor/node";
 import {Easing} from "@/editor/objects/easing";
 import {Color} from "@/util/math";
+import {RegisterNode} from "@/editor/node/registry";
 
-
+@RegisterNode('Color', ['fas', 'brush'], 'commands')
 export class ColorNode extends ElementNode {
-    type = 'color'
     icon = ['fas', 'brush']
 
     constructor(ctx: EditorContext) {
@@ -29,7 +28,7 @@ export class ColorNode extends ElementNode {
 
     async cook(ctx: CookContext): Promise<CookResult> {
 
-        const geo = ctx.input[0] as SBCollection
+        const geo = ctx.getInput()
 
         const startTime = this.param('startTime')!
         const endTime = this.param('endTime')!

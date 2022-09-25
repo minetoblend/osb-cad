@@ -3,25 +3,33 @@
     <div class="viewport-container" ref="viewportContainer">
 
       <div class="viewport-handles">
-        {{ctx.time}}
+        {{ ctx.time }}
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {onBeforeUnmount, onMounted, ref} from "vue";
+import {onBeforeUnmount, onMounted, ref, shallowRef, watchEffect} from "vue";
 import * as PIXI from 'pixi.js'
 import {PlayfieldContainer} from "@/components/viewport/playfield";
 import {useContext} from "@/editor/ctx/use";
 
 const viewportContainer = ref<HTMLDivElement>()
 
-let app!: PIXI.Application
+//let app!: PIXI.Application
 const ctx = useContext()
+const stage = new PIXI.Container()
+const playfield = shallowRef<PlayfieldContainer>()
+
+const renderer = new PIXI.Renderer({
+  width: 640,
+  height: 480,
+  antialias: false,
+})
 
 const resizeObserver = new ResizeObserver(([entry]) => {
-  app.resize()
+  renderer.resize(entry.contentRect.width, entry.contentRect.height)
 
   const padding = 20
 
@@ -30,22 +38,18 @@ const resizeObserver = new ResizeObserver(([entry]) => {
       entry.contentRect.height / (480 + padding * 2)
   )
 
-  app.stage.scale.set(scale, scale)
+  stage.scale.set(scale, scale)
 
-  app.stage.position.set(
+  stage.position.set(
       (entry.contentRect.width - scale * 640) / 2,
       (entry.contentRect.height - scale * 480) / 2,
   )
+
+  renderer.render(stage)
 })
 
 onMounted(() => {
-  app = new PIXI.Application({
-    width: 640,
-    height: 480,
-    antialias: false,
-    resizeTo: viewportContainer.value
-  })
-  viewportContainer.value!.appendChild(app.view)
+  viewportContainer.value!.appendChild(renderer.view)
   resizeObserver.observe(viewportContainer.value!)
   init()
 })
@@ -57,8 +61,16 @@ function init() {
 }
 
 function addViewportContainer() {
-  app.stage.addChild(new PlayfieldContainer(ctx))
+  playfield.value = new PlayfieldContainer(ctx)
+  stage.addChild(playfield.value)
 }
+
+watchEffect(() => {
+  if (playfield.value) {
+    playfield.value.updateSprites(ctx.currentGeometry.value, ctx.time.value)
+    renderer.render(stage)
+  }
+})
 
 </script>
 

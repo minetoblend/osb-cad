@@ -35,7 +35,3 @@ export function serializeNodeParameter(param: NodeParameter): SerializedNodePara
         value: param.value,
     }
 }
-
-export function deserializeNode() {
-
-}

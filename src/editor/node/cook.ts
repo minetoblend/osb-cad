@@ -2,37 +2,35 @@ import {EditorContext} from "@/editor/ctx/context";
 import {NodePath} from "@/editor/node/path";
 import {CircularDependencyError, NodeError} from "@/editor/node/error";
 import {Node, NodeStatus} from "@/editor/node/index";
-import {ElementNode} from "@/editor/node/element";
-import {CookContext} from "@/editor/node/cook.context";
-import {animationFrameAsPromise} from "@/util/promise";
+import {CookContext, CookError, CookResult, CookResultType} from "@/editor/node/cook.context";
+import {animationFrameAsPromise, nextTickAsPromise} from "@/util/promise";
+import {Task} from "@/editor/ctx/scheduler";
+import {NodeDependency} from "@/editor/node/dependency";
+import {SBCollection} from "@/editor/objects/collection";
 
-export class CookJob {
-    private nodes: Node[] = [];
+export class CookTask implements Task {
 
     constructor(readonly ctx: EditorContext, readonly path: NodePath) {
+
     }
 
-    canceled = false
+    wasCanceled = false
     finished = false
     cooking = new Set<Node>()
 
     async run(): Promise<void> {
-        console.error('running job')
+        console.warn('running cook job for ' + this.path.toString())
         try {
             const node = this.ctx.getObject(this.path)
             if (!node)
                 return;
-
-            const dirtyDependencies = node.findDirtyDependenciesDeep()
-            this.nodes = [
-                ...dirtyDependencies,
-                node,
-            ]
-
-
             const start = Date.now()
-            await this.runInternal()
-            console.log(`Job took ${Date.now() - start}ms`)
+            const result = await this.runInternal(node)
+            if (result && result.type === CookResultType.Success && this.finished) {
+                this.ctx.currentGeometry.value = result.outputData[0]
+            }
+
+            console.warn(`cook job for ${this.path.toString()} took ${Date.now() - start}ms`)
         } catch (e) {
             console.error(e)
             if (e instanceof NodeError) {
@@ -50,75 +48,94 @@ export class CookJob {
                 })
             }
         }
-        if (this.finished) {
-            const node = this.ctx.getObject(this.path) as ElementNode
-            this.ctx.currentGeometry.value = node.getOutput(0)
-        }
-        this.runScheduledJob()
     }
 
-    private async cookNode(node: Node) {
-        this.cooking.add(node)
-        const connections = node.parent?.getConnectionsLeadingTo(node)
-        connections?.forEach(connection => connection.circular.value = false)
+    lastUpdate = 0
 
+    private async cookNode(node: Node, dependency: NodeDependency): Promise<void> {
+        if (this.wasCanceled)
+            return;
+
+        let result = CookResult.failure([new CookError(node, "Did not cook")]);
         try {
-            node.status.value = NodeStatus.Cooking
-            await animationFrameAsPromise()
 
-            console.log('cooking ' + node.path.toString())
-            const ctx = new CookContext(node)
-            const result = await node.cook(ctx)
+            if (dependency && !dependency.dirty && !node.isDirty && node.resultCache) {
+                dependency.result = CookResult.success(...node.resultCache)
+                return;
+            }
 
-            if (!this.canceled) {
-                node.setResultCache(result.outputData)
-                node.status.value = NodeStatus.Cooked
+            const dependencies = node.findDependenciesForCooking()
+            if (!dependency.isStatic) {
+                dependencies.forEach(it => it.assignFromDownstream(dependency))
+            }
+
+            await Promise.all(dependencies.filter(it => it.node).map(dependency => this.cookNode(dependency.node!, dependency)))
+
+            const failedDependencies = dependencies.filter(it => it.result && it.result.type === CookResultType.Failure)
+            if (failedDependencies.length > 0) {
+                const upstreamErrors: CookError[] = []
+                failedDependencies.forEach(it => upstreamErrors.push(
+                    ...it.result?.errors ?? []
+                ))
+                failedDependencies.forEach(it => upstreamErrors.push(
+                    ...it.result?.upstreamErrors ?? []
+                ))
+                dependency.result = CookResult.failure([], upstreamErrors)
+                return;
             }
 
 
+            node.isCooking.value = true
+
+            if (performance.now() - this.lastUpdate > 50) {
+                console.log('wait')
+                await animationFrameAsPromise()
+                this.lastUpdate = performance.now()
+            }
+
+            await nextTickAsPromise()
+
+            if (this.wasCanceled)
+                return;
+
+            const ctx = new CookContext(this.ctx, dependencies, dependency, () => new SBCollection())
+
+            result = await node.cook(ctx)
+            dependency.result = result
+
+            if (result.type === CookResultType.Success) {
+                if (!this.wasCanceled && dependency?.isStatic) {
+                    node.resultCache = result.outputData
+                } else {
+                    node.resultCache = null
+                }
+                node.status.value = NodeStatus.Cooked
+            } else if (result.type === CookResultType.Failure) {
+                if (!this.wasCanceled && dependency?.isStatic) {
+                    node.resultCache = result.outputData
+                }
+                node.status.value = NodeStatus.Error
+            }
         } catch (e) {
             console.log(e)
             node.status.value = NodeStatus.Error
+        } finally {
+            node.isCooking.value = false
         }
-        this.cooking.delete(node)
+
+
     }
 
     cancel() {
-        this.canceled = true
+        this.wasCanceled = true
     }
 
-    runScheduledJob() {
-        this.ctx.cookJob.value = this.ctx.scheduledCookJob.value
-        this.ctx.scheduledCookJob.value = undefined
-        if (this.ctx.cookJob.value)
-            this.ctx.cookJob.value.run()
-    }
-
-    private runInternal() {
-        return new Promise((resolve) => {
-            this.cookNextNode(resolve)
-        })
-    }
-
-
-    cookNextNode(resolve: Function) {
-        if (this.canceled)
-            return resolve();
-        if (this.nodes.length === 0 && this.cooking.size === 0) {
+    async runInternal(node: Node): Promise<CookResult | undefined> {
+        this.lastUpdate = performance.now()
+        const rootDependency = new NodeDependency(node, 0, 0)
+        await this.cookNode(node, rootDependency)
+        if (!this.wasCanceled && rootDependency.result && rootDependency.result.type === CookResultType.Success)
             this.finished = true
-            return resolve()
-        }
-        const nodes = this.nodes
-        for (let i = 0; i < nodes.length; i++) {
-            const node = nodes[i]
-            const directDependencies = node.findDirtyDependencies()
-
-            if (directDependencies.length === 0) {
-                this.nodes.splice(i, 1)
-                this.cookNode(node).then(() => this.cookNextNode(resolve))
-                this.cookNextNode(resolve);
-                return;
-            }
-        }
+        return rootDependency.result
     }
 }

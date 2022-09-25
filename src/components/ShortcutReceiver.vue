@@ -32,7 +32,13 @@ function onKeyDown(evt: KeyboardEvent) {
         shortcut.push('alt');
       shortcut.push(evt.key.toLowerCase())
 
-      emit('shortcut', shortcut.join(' '))
+      const event = new CustomEvent('shortcut', {
+        cancelable: true,
+        detail: shortcut.join('+')
+      })
+      emit('shortcut', event)
+      if (event.defaultPrevented)
+        evt.preventDefault()
     }
   }
 }

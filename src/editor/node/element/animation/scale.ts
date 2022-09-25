@@ -1,13 +1,12 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
-import {SBCollection} from "@/editor/objects/collection";
-import {NodeBuilder} from "@/editor/node";
+import {NodeBuilder, TimingInformation} from "@/editor/node";
 import {Easing} from "@/editor/objects/easing";
+import {RegisterNode} from "@/editor/node/registry";
 
-
+@RegisterNode('Scale', ['fas', 'up-right-and-down-left-from-center'], 'commands')
 export class ScaleNode extends ElementNode {
-    type = 'scale'
     icon = ['fas', 'up-right-and-down-left-from-center']
 
     constructor(ctx: EditorContext) {
@@ -28,7 +27,7 @@ export class ScaleNode extends ElementNode {
 
     async cook(ctx: CookContext): Promise<CookResult> {
 
-        const geo = ctx.input[0] as SBCollection
+        const geo = ctx.getInput()
 
         const startTime = this.param('startTime')!
         const endTime = this.param('endTime')!
@@ -47,5 +46,19 @@ export class ScaleNode extends ElementNode {
         })
 
         return CookResult.success(geo);
+    }
+
+    get timingInformation(): TimingInformation | undefined {
+        const start = this.param('startTime')!.get()
+        const end = this.param('endTime')!.get()
+        return {
+            type: "animation",
+            startTime: start,
+            endTime: end,
+            keyframes: [
+                {time: start},
+                {time: end},
+            ]
+        }
     }
 }

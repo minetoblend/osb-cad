@@ -10,19 +10,20 @@ pointGraphics.drawRect(-3, -3, 6, 6)
 export class StoryboardElementContainer extends PIXI.Container {
 
 
-    constructor(readonly ctx: EditorContext, public element: SBElement) {
+    constructor(readonly ctx: EditorContext, public element: SBElement, time: number) {
         super();
         this.createChildren(element.type)
+        this.update(time)
     }
 
-    updateFrom(element: SBElement) {
+    updateFrom(element: SBElement, time: number) {
         const type = element.type
         if (type !== this.element.type) {
             this.createChildren(type)
         }
         this.element = element
 
-        this.update(this.ctx.time.value)
+        this.update(time)
     }
 
     sprite?: PIXI.Sprite
@@ -49,14 +50,14 @@ export class StoryboardElementContainer extends PIXI.Container {
         this.position.set(pos.x, pos.y)
 
         if (this.element.type === SBElementType.Sprite) {
-            const texture = this.ctx.textureStore.textures[this.element._sprite]
+            const texture = this.ctx.fileStore.textures[this.element._sprite]
             this.sprite!.texture = texture.texture
         }
 
         this.rotation = this.element.getRotation(time)
         this.alpha = this.element.getAlpha(time)
 
-        if(this.sprite) {
+        if (this.sprite) {
             const color = this.element.getColor(time)
             this.sprite.tint = color.hex
         }

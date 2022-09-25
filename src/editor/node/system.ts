@@ -1,4 +1,4 @@
-import {Node, NodeInput, NodeOutput} from "@/editor/node/index";
+import {Node} from "@/editor/node/index";
 import {NodeConnection} from "@/editor/node/connection";
 import {NodePath} from "@/editor/node/path";
 import {ref, shallowReactive, watch, WatchStopHandle} from "vue";
@@ -7,18 +7,46 @@ import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {ExpressionDependency} from "@/editor/compile";
 import {endsWithNumber, getNumberAtEnd} from "@/util/string";
-import {SerializedNodeSystem} from "@/editor/ctx/serialize";
+import type {Deserializer, SerializedNodeSystem} from "@/editor/ctx/serialize";
+import {NodeInput, NodeOutput} from "@/editor/node/input";
+import {NodeDependency} from "@/editor/node/dependency";
+import {MarkDirtyReason} from "@/editor/node/markDirty";
 
 export abstract class NodeSystem<N extends Node> extends Node {
 
-    icon = ['fas', 'diagram-project']
+    abstract nodeType: string
 
+    icon = ['fas', 'diagram-project']
+    readonly outputNode = ref<string>()
     private readonly nodes = shallowReactive(new Map<string, N>())
     private readonly connections: NodeConnection<N>[] = shallowReactive([])
-    private readonly selection = shallowReactive(new Set<Node>())
-
-    readonly outputNode = ref<string>()
+    readonly selection = shallowReactive(new Set<Node>())
+    private readonly connectionSelection = shallowReactive(new Set<NodeConnection>())
     private outputWatcher: WatchStopHandle;
+
+    constructor(ctx: EditorContext, name: string) {
+        super(ctx, name);
+
+        this.outputWatcher = watch(this.outputNode, () => {
+            this.markDirty()
+        })
+    }
+
+    get nodeList() {
+        return this.nodes.values()
+    }
+
+    get connectionList(): ReadonlyArray<NodeConnection<N>> {
+        return [...this.connections]
+    }
+
+    get selectedNodes() {
+        return [...this.selection.values()]
+    }
+
+    get selectedConnections() {
+        return [...this.connectionSelection.values()]
+    }
 
     async cook(ctx: CookContext): Promise<CookResult> {
         if (this.outputNode.value) {
@@ -31,18 +59,9 @@ export abstract class NodeSystem<N extends Node> extends Node {
         return CookResult.success(new SBCollection());
     }
 
-    constructor(ctx: EditorContext, name: string) {
-        super(ctx, name);
-
-        this.outputWatcher = watch(this.outputNode, () => {
-            this.markDirty()
-        })
-    }
-
     find(path: NodePath): Node | null {
         if (path.length === 0)
             return this
-
 
         const node = this.nodes.get(path.current)
         if (node) {
@@ -56,6 +75,7 @@ export abstract class NodeSystem<N extends Node> extends Node {
         node.name.value = this.getAvailableName(node.name.value)
         this.nodes.set(node.name.value, node)
         node.parent = this
+
         if (!this.outputNode.value)
             this.outputNode.value = node.name.value
     }
@@ -68,6 +88,11 @@ export abstract class NodeSystem<N extends Node> extends Node {
 
         this.nodes.delete(node.name.value)
         node.parent = undefined
+
+        if (node.name.value === this.outputNode.value) {
+            this.outputNode.value = undefined
+            this.markDirty()
+        }
         this.ctx.onNodeRemoved(this, node)
 
         node.destroy()
@@ -76,9 +101,11 @@ export abstract class NodeSystem<N extends Node> extends Node {
     addConnection(from: NodeOutput<N>, to: NodeInput<N>) {
         const existingConnections = this.getConnectionsLeadingTo(to)
         if (!to.multiple) {
-            existingConnections.forEach(connection => {
-                this.removeConnection(connection);
-            })
+            existingConnections.forEach(connection => this.removeConnection(connection))
+        } else {
+            existingConnections.filter(it =>
+                it.from === from && it.to === to
+            ).forEach(connection => this.removeConnection(connection))
         }
         const connection = new NodeConnection<N>(from, to)
         from.connections.push(connection)
@@ -105,15 +132,8 @@ export abstract class NodeSystem<N extends Node> extends Node {
         return this.connections.find(it => it.from === from && it.to === to)
     }
 
-    get nodeList() {
-        return this.nodes.values()
-    }
-
-    get connectionList(): ReadonlyArray<NodeConnection<N>> {
-        return this.connections
-    }
-
     select(nodes: N[], additive: boolean = false) {
+        this.connectionSelection.clear()
         if (!additive) {
             this.selection.clear()
             if (nodes.length > 0)
@@ -123,18 +143,29 @@ export abstract class NodeSystem<N extends Node> extends Node {
             this.selection.add(node)
     }
 
+    selectConnections(connections: NodeConnection<N>[], additive: boolean = false) {
+        this.selection.clear()
+        if (!additive) {
+            this.connectionSelection.clear()
+        }
+        for (let connection of connections)
+            this.connectionSelection.add(connection)
+    }
+
     isNodeSelected(node: N): boolean {
         return this.selection.has(node)
+    }
+
+    isConnectionSelected(connection: NodeConnection<N>): boolean {
+        return this.connectionSelection.has(connection)
     }
 
     rename(node: N, newName: string) {
         this.nodes.delete(node.name.value)
         this.nodes.set(newName, node)
+        if (this.outputNode.value === node.name.value)
+            this.outputNode.value = newName
         node.name.value = newName
-    }
-
-    get selectedNodes() {
-        return [...this.selection.values()]
     }
 
     getConnectionsLeadingTo(input: NodeInput<N> | N) {
@@ -158,25 +189,20 @@ export abstract class NodeSystem<N extends Node> extends Node {
         return this.nodes.get(name);
     }
 
-    markDirty(visited: Set<Node> = new Set<Node>()) {
+    markDirty(reason?: MarkDirtyReason, visited: Set<Node> = new Set<Node>()) {
+        super.markDirty(reason, visited);
+
         if (!this.parent && this.name.value === 'root') {
             return this.ctx.cookNode(this)
         }
-
-        super.markDirty();
     }
 
-    findDirtyDependenciesDeep(visited: Set<Node> = new Set<Node>()): Node[] {
-        const dependencies = super.findDirtyDependenciesDeep(visited);
+    findDependenciesForCooking(visited: Set<Node> = new Set<Node>()): NodeDependency[] {
+        const dependencies = super.findDependenciesForCooking(visited);
 
         if (this.outputNode.value) {
             const outputNode = this.getNode(this.outputNode.value) as Node
-            if (outputNode?.isDirty) {
-                dependencies.push(
-                    ...outputNode.findDirtyDependenciesDeep(new Set(visited))
-                )
-                dependencies.push(outputNode)
-            }
+            dependencies.push(new NodeDependency(outputNode, 0, 0))
         }
 
         return dependencies;
@@ -201,18 +227,25 @@ export abstract class NodeSystem<N extends Node> extends Node {
 
     destroy() {
         this.outputWatcher()
+        this.nodes.forEach(it => it.destroy())
+        super.destroy()
     }
 
-    markDependencyChanged(dependency: ExpressionDependency) {
+    markDependencyChanged(...dependencies: ExpressionDependency[]) {
         this.nodes.forEach(it => {
-            if (it.hasDependency(dependency))
-                it.markDirty()
+            dependencies.forEach(dependency => {
+                if (it.hasDependency(dependency))
+                    it.markDirty(MarkDirtyReason.expressionDependency(dependency))
+            })
             if (it instanceof NodeSystem)
-                it.markDependencyChanged(dependency)
+                it.markDependencyChanged(...dependencies)
         })
     }
 
     getAvailableName(name: string) {
+        if (!this.nodes.has(name))
+            return name
+
         let discriminator = 0
         if (endsWithNumber(name)) {
             discriminator = getNumberAtEnd(name) ?? 0
@@ -233,7 +266,42 @@ export abstract class NodeSystem<N extends Node> extends Node {
         return {
             ...node,
             nodes: [...this.nodeList].map(it => it.serialize()),
-            connections: this.connectionList.map(it => it.serialize())
+            connections: this.connectionList.map(it => it.serialize()),
+            output: this.outputNode.value ?? null,
         }
+    }
+
+    initFromData(data: Partial<SerializedNodeSystem>, deserializer: Deserializer) {
+        super.initFromData(data, deserializer);
+
+        data.nodes?.forEach(serializedNode => {
+            const node = deserializer.deserializeNode(this.ctx, serializedNode, this.nodeType) as N
+            if (node) {
+                this.add(node)
+            }
+        })
+
+        data.connections?.forEach(serializedConnection => {
+            const fromNode = this.getNode(serializedConnection.from.node)
+            const toNode = this.getNode(serializedConnection.to.node)
+            const from = fromNode?.outputs[serializedConnection.from.index]
+            const to = toNode?.inputs[serializedConnection.to.index]
+            if (from && to)
+                this.addConnection(from as NodeOutput<N>, to as NodeInput<N>)
+        })
+
+        this.outputNode.value = data.output ?? undefined
+    }
+
+    isChildOf(system: NodeSystem<any>): boolean {
+        if (this.parent === system)
+            return true;
+        if (this.parent)
+            return this.parent.isChildOf(system)
+        return false;
+    }
+
+    get nodeNames(): IterableIterator<string> {
+        return this.nodes.keys()
     }
 }

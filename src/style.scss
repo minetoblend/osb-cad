@@ -1,6 +1,4 @@
 
-
-
 .editor-pane {
   width: 100%;
   height: 100%;
@@ -30,4 +28,27 @@
 .el-breadcrumb__item > * {
   user-select: none !important;
   cursor: pointer !important;
+}
+
+.flex-grow-1 {
+  flex-grow: 1;
+}
+
+@for $i from 1 through 4 {
+  .mr-#{$i} {
+    margin-right: #{$i * 0.5}rem;
+  }
+  .ml-#{$i} {
+    margin-left: #{$i * 0.5}rem;
+  }
+}
+
+.el-breadcrumb__inner {
+  &:hover {
+    color: white !important;
+  }
+}
+
+.menu-bar-container {
+  border-bottom: 2px solid #414243;
 }
