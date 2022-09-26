@@ -52,6 +52,8 @@ export class FadeNode extends ElementNode {
     }
 
     get timingInformation(): TimingInformation | undefined {
+        if (this.hasDependency(ExpressionDependency.ElementIndex))
+            return undefined
         const start = this.param('startTime')!.get()
         const end = this.param('endTime')!.get()
         return {

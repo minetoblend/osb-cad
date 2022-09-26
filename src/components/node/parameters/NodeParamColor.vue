@@ -15,6 +15,9 @@ import {computed, defineProps, PropType, ref, watch} from "vue";
 import {Node} from "@/editor/node";
 import {NodeInterfaceItem} from "@/editor/node/interface";
 import {FloatNodeParameter} from "@/editor/node/parameter";
+import {useContext} from "@/editor/ctx/use";
+import {SetNodeParameterCommand} from "@/editor/ctx/command/parameter";
+import {compileExpression} from "@/editor/compile";
 
 const props = defineProps({
   node: {
@@ -26,6 +29,8 @@ const props = defineProps({
     required: true,
   }
 })
+
+const ctx = useContext()
 
 const red = ref('0')
 const green = ref('0')
@@ -50,15 +55,42 @@ function loadValues() {
 }
 
 function commitRed() {
-  params.value.r.setText(red.value)
+  let val: any = red.value;
+  const expr = compileExpression(val, params.value.r.withIndex)
+  if (expr.isConstant && expr.source.trim() === expr.cachedValue.toString()) {
+    val = expr.cachedValue
+  } else {
+    val = expr
+  }
+  ctx.executeCommand(
+      new SetNodeParameterCommand(ctx, props.node.path, props.interface.id + '.x', val)
+  )
 }
 
 function commitGreen() {
-  params.value.g.setText(green.value)
+  let val: any = green.value;
+  const expr = compileExpression(val, params.value.g.withIndex)
+  if (expr.isConstant && expr.source.trim() === expr.cachedValue.toString()) {
+    val = expr.cachedValue
+  } else {
+    val = expr
+  }
+  ctx.executeCommand(
+      new SetNodeParameterCommand(ctx, props.node.path, props.interface.id + '.y', val)
+  )
 }
 
 function commitBlue() {
-  params.value.b.setText(blue.value)
+  let val: any = blue.value;
+  const expr = compileExpression(val, params.value.b.withIndex)
+  if (expr.isConstant && expr.source.trim() === expr.cachedValue.toString()) {
+    val = expr.cachedValue
+  } else {
+    val = expr
+  }
+  ctx.executeCommand(
+      new SetNodeParameterCommand(ctx, props.node.path, props.interface.id + '.z', val)
+  )
 }
 
 loadValues()

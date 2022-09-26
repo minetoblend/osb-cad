@@ -1,9 +1,20 @@
 <template>
   <div class="editor-pane">
     <div class="viewport-container" ref="viewportContainer">
-
-      <div class="viewport-handles">
-        {{ ctx.time }}
+      <div class="viewport-overlay">
+        <div class="command-stats">
+          <div>
+            Command count: {{ statistics.commandCount }}
+          </div>
+          <template v-if="statistics.spritesWithOverlappingCommandCount">
+            <div>
+              Sprites with overlapping commands: {{ statistics.spritesWithOverlappingCommandCount }}
+            </div>
+            <div>
+              Total overlapping commands: {{ statistics.overlappingCommandCount }}
+            </div>
+          </template>
+        </div>
       </div>
     </div>
   </div>
@@ -14,6 +25,7 @@ import {onBeforeUnmount, onMounted, ref, shallowRef, watchEffect} from "vue";
 import * as PIXI from 'pixi.js'
 import {PlayfieldContainer} from "@/components/viewport/playfield";
 import {useContext} from "@/editor/ctx/use";
+import {StoryboardStatistics} from "@/components/viewport/statistics";
 
 const viewportContainer = ref<HTMLDivElement>()
 
@@ -65,9 +77,11 @@ function addViewportContainer() {
   stage.addChild(playfield.value)
 }
 
+const statistics = shallowRef(new StoryboardStatistics())
+
 watchEffect(() => {
   if (playfield.value) {
-    playfield.value.updateSprites(ctx.currentGeometry.value, ctx.time.value)
+    statistics.value = playfield.value.updateSprites(ctx.currentGeometry.value, ctx.time.value)
     renderer.render(stage)
   }
 })
@@ -79,5 +93,14 @@ watchEffect(() => {
   position: absolute;
   width: 100%;
   height: 100%;
+}
+
+.viewport-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  bottom: 0;
+
 }
 </style>

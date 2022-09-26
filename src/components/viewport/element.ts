@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js'
 import {SBElement, SBElementType} from "@/editor/objects";
 import {EditorContext} from "@/editor/ctx/context";
 import {Origin} from "@/editor/objects/origin";
+import {Transform} from "pixi.js";
 
 const pointGraphics = new PIXI.Graphics()
 pointGraphics.beginFill(0xffffff)
@@ -46,15 +47,19 @@ export class StoryboardElementContainer extends PIXI.Container {
     }
 
     update(time: number) {
-        const pos = this.element.getPos(time);
-        this.position.set(pos.x, pos.y)
 
         if (this.element.type === SBElementType.Sprite) {
             const texture = this.ctx.fileStore.textures[this.element._sprite]
             this.sprite!.texture = texture.texture
         }
 
-        this.rotation = this.element.getRotation(time)
+        const transform = new Transform()
+        transform.setFromMatrix(this.element.getTransform(time))
+
+        this.position.copyFrom(transform.position)
+        this.scale.copyFrom(transform.scale)
+        this.rotation = transform.rotation
+
         this.alpha = this.element.getAlpha(time)
 
         if (this.sprite) {
@@ -62,8 +67,6 @@ export class StoryboardElementContainer extends PIXI.Container {
             this.sprite.tint = color.hex
         }
 
-        const scale = this.element.getScale(time)
-        this.children[0].scale.set(scale.x, scale.y)
 
         if (this.sprite) {
             const sprite = this.sprite

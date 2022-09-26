@@ -78,4 +78,16 @@ export class AnimatedValue<T extends IHasMathOperations<T>> {
         return this.commands[this.commands.length - 1]?.endTime ?? NaN
     }
 
+    commandCountAt(time: number) {
+        let count = 0
+        let {index, found} = this.findCommandIndex(time)
+        if (!found && index > 0)
+            index--;
+        while (this.commands[index--]?.isActiveAt(time)) {
+            count++
+        }
+
+        return count
+    }
+
 }

@@ -91,9 +91,7 @@ export class SBCollection {
         scale: Vec2 = Vec2.one()
     ): { el: SBElement, index: number } {
         const el = new SBElement(pos, origin, sprite, scale)
-        const index = this.elements.length
-        this.elements.push(el)
-        return {el, index}
+        return this.addElement(el)
     }
 
     addElement(element: SBElement): { el: SBElement, index: number } {
@@ -125,7 +123,7 @@ export class SBCollection {
 
     append(geo: SBCollection) {
         this.elements.push(
-            ...geo.elements
+            ...geo.elements.map(it => it.clone())
         )
         geo.attributes.forEach((attr, key) => {
             const ownAttr = this.attributes.get(key)
@@ -148,8 +146,9 @@ export class SBCollection {
     filter(predicate: (index: number, el: SBElement) => boolean) {
         let indexes = new Set<number>()
         for (let i = 0; i < this.elements.length; i++) {
-            if (predicate(i, this.elements[i]))
+            if (predicate(i, this.elements[i])) {
                 indexes.add(i)
+            }
         }
         this.elements = this.elements.filter((it, index) => indexes.has(index))
         this.attributes.forEach(attribute => attribute.keepIndexes(indexes))

@@ -58,7 +58,6 @@ export class MoveNodesCommand extends EditorCommand {
         } else {
             this.from = from
         }
-        console.log(this)
     }
 
     readonly from: Vec2[]

@@ -19,6 +19,9 @@ export class FileStore {
         this.textureMap.clear()
         this.beatmaps.value = []
 
+        if (!await electronAPI.fileExists(mapsetPath))
+            return;
+
         await this.loadDir(mapsetPath, mapsetPath)
 
         ctx.markDependencyChanged(ExpressionDependency.Texture, ExpressionDependency.Beatmap)

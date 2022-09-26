@@ -20,7 +20,7 @@ export class CopyNode extends ElementNode {
             .output('output')
             .parameters(param => param
                 .int('copies', 'Copies', {defaultValue: 1})
-                .vec2('move', 'Move')
+                .vec2('move', 'Move', {withIndex: true})
             )
     }
 

@@ -9,6 +9,10 @@ export abstract class SpriteCommand<T> {
     abstract clone(): SpriteCommand<T>
 
     abstract valueAtTime(time: number): T
+
+    isActiveAt(time: number) {
+        return time >= this.startTime && time < this.endTime;
+    }
 }
 
 export class MoveCommand extends SpriteCommand<Vec2> {

@@ -10,7 +10,7 @@ import {
     ScaleVecCommand
 } from "@/editor/objects/command";
 import {Easing} from "@/editor/objects/easing";
-
+import {Matrix} from "pixi.js";
 
 export class SBElement {
     constructor(pos: Vec2, origin: Origin, sprite: number, scale: Vec2) {
@@ -18,14 +18,6 @@ export class SBElement {
         this._origin = origin;
         this._sprite = sprite;
         this._scale = scale;
-        //this.moveTimeline = new AnimatedValue<Vec2>(this._pos)
-        //this.moveXTimeline = new AnimatedValue<Float>(new Float(this._pos.x))
-        //this.moveYTimeline = new AnimatedValue<Float>(new Float(this._pos.y))
-        //this.scaleTimeline = new AnimatedValue<Float>(new Float(this._scale.x))
-        //this.scaleVecTimeline = new AnimatedValue<Vec2>(this._scale)
-        //this.rotateTimeline = new AnimatedValue<Float>(new Float(0))
-        //this.fadeTimeline = new AnimatedValue<Float>(new Float(1))
-        //this.colorTimeline = new AnimatedValue<Color>(Color.white)
     }
 
     _pos: Vec2
@@ -246,11 +238,13 @@ export class SBElement {
 
     moveWithCommands(delta: Vec2) {
         this._pos.move(delta)
-        this.moveTimeline.initialValue.move(delta)
-        this.moveTimeline.commandList.forEach(it => {
-            (it as MoveCommand).startPos.move(delta);
-            (it as MoveCommand).endPos.move(delta);
-        })
+        if (this._moveTimeline) {
+            this._moveTimeline.initialValue.move(delta)
+            this._moveTimeline.commandList.forEach(it => {
+                (it as MoveCommand).startPos.move(delta);
+                (it as MoveCommand).endPos.move(delta);
+            })
+        }
     }
 
     moveToWithCommands(to: Vec2) {
@@ -286,6 +280,75 @@ export class SBElement {
             el.fadeTimeline.commandList.forEach(command => this.fadeTimeline.addCommand(command))
         if (el._colorTimeline)
             el.colorTimeline.commandList.forEach(command => this.colorTimeline.addCommand(command))
+    }
+
+    getTransform(time: number) {
+        const transform = new Matrix().identity()
+
+        const pos = this.getPos(time)
+        const scale = this.getScale(time)
+        transform.scale(scale.x, scale.y)
+        transform.rotate(this.getRotation(time))
+        transform.translate(pos.x, pos.y)
+
+        return transform
+    }
+
+    commandCountAt(time: number) {
+        let count = 0
+        let overlapping = 0
+
+        if (this._moveTimeline) {
+            const c = this._moveTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+        if (this._moveXTimeline) {
+            const c = this._moveXTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+        if (this._moveYTimeline) {
+            const c = this._moveYTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+        if (this._scaleTimeline) {
+            const c = this._scaleTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+        if (this._scaleVecTimeline) {
+            const c = this._scaleVecTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+        if (this._rotateTimeline) {
+            const c = this._rotateTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+        if (this._fadeTimeline) {
+            const c = this._fadeTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+
+        if (this._colorTimeline) {
+            const c = this._colorTimeline.commandCountAt(time)
+            count += c
+            if (c > 1)
+                overlapping += c
+        }
+
+        return {count, overlapping}
     }
 }
 

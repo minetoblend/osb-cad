@@ -72,7 +72,7 @@ export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean,
     if (path.node.name.charAt(1) === '$') {
         const typeLetter = path.node.name.charAt(0)
         let type = {
-            i: 'numuber',
+            i: 'number',
             v: 'vec2'
         }[typeLetter]
         if (!type)

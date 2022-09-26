@@ -29,8 +29,8 @@ export const globalFunctions: GlobalFunctions = {
         return new Vec2(x, y)
     },
     rand(seed: number, min = 0, max = 1) {
-        const rand = new Prando(seed)
-        rand.skip(seed + 10)
+        const rand = new Prando((seed * 100).toString())
+        //rand.skip(seed * 10)
         return rand.next(min, max)
     }
 }
@@ -85,7 +85,7 @@ export function compileStatements(code: string) {
     const attributes = new Set<string>()
     const dependencies = new Set<ExpressionDependency>()
 
-    code = '(ctx, idx) => {\n' + code.trim() + '\n}'
+    code = '(ctx, el, idx) => {\n' + code.trim() + '\n}'
 
     const ast = parser.parse(code, {
         sourceFilename: 'code.js'
@@ -138,15 +138,15 @@ export const Globals = new Set<string>(
 );
 
 export class CompiledCodeBlock {
-    constructor(readonly expression: (ctx: any, idx: number) => any, readonly attributes: Set<string>, readonly dependencies: Set<ExpressionDependency>) {
+    constructor(readonly expression: (ctx: any, el: SBElement, idx: number) => any, readonly attributes: Set<string>, readonly dependencies: Set<ExpressionDependency>) {
         console.log(expression)
     }
 
     run(globals: GlobalValues, inputs: SBCollection[]) {
         const baseCtx = createStatementBaseContext(globals)
-        inputs[0]?.forEach(idx => {
+        inputs[0]?.forEach((idx, el) => {
             const ctx = createStatementContext(baseCtx, inputs)
-            this.expression(ctx, idx)
+            this.expression(ctx, el, idx)
         })
     }
 
