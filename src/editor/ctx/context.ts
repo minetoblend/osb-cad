@@ -16,6 +16,9 @@ import {Scheduler} from "@/editor/ctx/scheduler";
 import {EditorLocation} from "@/components/node/util";
 import {Vec2} from "@/util/math";
 import {addRecentFile} from "@/editor/files";
+import {EditorClock} from "@/editor/ctx/clock";
+import {AudioEngine} from "@/editor/audio";
+import * as path from "path";
 
 export class EditorContext {
 
@@ -26,18 +29,13 @@ export class EditorContext {
     readonly mapsetPath = ref<string>('')
     readonly fileStore = new FileStore()
     readonly activePath = shallowRef(NodePath.root())
-    readonly time = ref(0)
     readonly duration = ref(10_000)
     readonly projectFilepath = ref<string>()
-    readonly activeNodeSystem = computed(() =>
-        this.getObject(this.activePath.value) as NodeSystem<any>
-    )
+    readonly activeNodeSystem = computed(() => this.getObject(this.activePath.value) as NodeSystem<any>)
     readonly root = shallowRef(new SceneNode(this, 'root'))
     readonly locations = reactive(new Map<string, EditorLocation>())
-
     readonly scheduler = new Scheduler()
     readonly activeBeatmap = ref<string>()
-
     readonly currentBeatmapObject = computed(() => {
         this.markDependencyChanged(ExpressionDependency.Beatmap)
         if (this.activeBeatmap.value) {
@@ -45,14 +43,27 @@ export class EditorContext {
         }
         return this.fileStore.beatmaps.value[0]
     })
+    readonly audioEngine = new AudioEngine()
+
+    readonly clock = new EditorClock(this)
+
+
+    readonly time = this.clock.time
+
 
     constructor() {
         this.setupEvents()
 
-        watch(this.time, () => {
-            this.root.value.markDependencyChanged(ExpressionDependency.Time)
+        watch(this.currentBeatmapObject, async (beatmap, oldBeatmap) => {
+            if (beatmap) {
+                if (!this.clock.sound || beatmap.AudioFilename !== oldBeatmap?.AudioFilename) {
+                    const audioData = await electronAPI.readFile(path.join(this.mapsetPath.value, beatmap.AudioFilename))
+                    this.clock.setSound(await this.audioEngine.createSound(audioData.buffer))
+                }
+            } else {
+                this.clock.setSound()
+            }
         })
-
     }
 
     setupEvents() {
@@ -61,17 +72,6 @@ export class EditorContext {
         })
         electronAPI.handleRedo(() => {
             this.history.redo()
-        })
-
-        window.addEventListener('keydown', evt => {
-            if (evt.ctrlKey && evt.code === 'KeyZ') {
-                evt.preventDefault()
-                this.history.undo()
-            }
-            if (evt.ctrlKey && evt.code === 'KeyY') {
-                evt.preventDefault()
-                this.history.redo()
-            }
         })
     }
 
@@ -168,12 +168,11 @@ export class EditorContext {
         if (project.activeBeatmap)
             this.activeBeatmap.value = project.activeBeatmap
 
-        this.time.value = project.currentTime ?? 0
+        this.clock.seek(project.currentTime ?? 0)
     }
 
     markDependencyChanged(...dependency: ExpressionDependency[]) {
         this.root.value.markDependencyChanged(...dependency)
-        console.warn(`Global dependency changed: ${dependency.map(d => ExpressionDependency[d]).join(', ')}`)
     }
 
     async load() {

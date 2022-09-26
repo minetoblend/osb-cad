@@ -33,8 +33,6 @@ export class CommandHistory {
 
         lastCommand.execute()
 
-        this.ctx.save()
-
         return true;
     }
 
@@ -60,6 +58,7 @@ export class CommandHistory {
     }
 
     execute(command: EditorCommand) {
+        console.log(command)
         let undo;
         if (command.createUndo)
             undo = command.createUndo()

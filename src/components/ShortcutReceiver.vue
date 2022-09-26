@@ -1,5 +1,5 @@
 <template>
-  <div @mouseenter="onEnter" @mouseleave="onLeave">
+  <div @mouseenter="onEnter" @mouseleave="onLeave" class="shortcut-receiver">
     <slot></slot>
   </div>
 </template>
@@ -20,7 +20,17 @@ function onLeave() {
 }
 
 function onKeyDown(evt: KeyboardEvent) {
-  if (active) {
+  let notEditing =
+      evt.target === document.body
+
+  if (evt.target instanceof HTMLDivElement) {
+    if (!evt.target.isContentEditable) {
+      notEditing = true
+    }
+  }
+
+
+  if (active && notEditing) {
     if (evt.key.length === 1 || ['Delete'].includes(evt.key)) {
 
       let shortcut = []
@@ -30,7 +40,11 @@ function onKeyDown(evt: KeyboardEvent) {
         shortcut.push('shift');
       if (evt.altKey)
         shortcut.push('alt');
-      shortcut.push(evt.key.toLowerCase())
+
+      let key = evt.key.toLowerCase()
+      if (key === ' ')
+        key = 'space'
+      shortcut.push(key)
 
       const event = new CustomEvent('shortcut', {
         cancelable: true,
@@ -51,3 +65,10 @@ onBeforeUnmount(() => {
 
 
 </script>
+
+<style lang="scss">
+.shortcut-receiver {
+  width: 100%;
+  height: 100%;
+}
+</style>

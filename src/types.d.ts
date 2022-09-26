@@ -3,7 +3,7 @@ declare const electronAPI: {
     handleRedo(handler: () => void)
     writeFile(path: string, contents: string): Promise<void>
     readTextFile(path: string): Promise<string>
-    readFile(path: string): Promise<Blob>
+    readFile(path: string): Promise<Uint8Array>
     isDir(path: string): Promise<boolean>
     readDir(path: string): Promise<string[]>
     fileExists(path: string): Promise<boolean>
@@ -30,8 +30,10 @@ declare module 'osu-parser' {
 }
 
 interface BeatmapData {
-    hitObjects: HitObjectData[]
     Version: string
+    AudioFilename: string
+    hitObjects: HitObjectData[]
+    timingPoints: TimingPointData[]
 }
 
 interface HitObjectData {
@@ -39,6 +41,17 @@ interface HitObjectData {
     startTime: number
     objectName: 'circle' | 'slider' | 'spinner'
     duration?: number
+    endPosition?: [number, number],
+    repeatCount?: number
+    pixelLength?: number
+}
+
+interface TimingPointData {
+    beatLength: number
+    bpm: number
+    offset: number
+    timingChange: boolean
+
 }
 
 type Clonable<T = any> = {

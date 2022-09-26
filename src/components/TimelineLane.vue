@@ -1,9 +1,9 @@
 <template>
-  <div class="timeline-lane">
-    <div class="name">
+  <div class="timeline-lane" :class="{active}">
+    <div class="name" @click.left="emit('select')">
       {{ node.name.value }}
     </div>
-    <div class="lane-contents" ref="laneContents">
+    <div class="lane-contents" ref="laneContents" @dblclick.self="emit('select')">
       <div v-if="timing"
            class="time"
            :class="{invalid: !hasValidTime, [timing.type]: true}"
@@ -14,7 +14,9 @@
                v-if="keyframe.time + (keyframe.duration || 0) > startTime && keyframe.time < endTime"
                :style="{left: `${(keyframe.time - actualStartTime) / (duration) * 100}%`}">
             <div class="keyframe-handle" @mousedown.stop.prevent="handleKeyframeMousedown($event, keyframe)"
-                 :style="{width: keyframe.duration ? `${24 + timeToPixels(keyframe.duration)}px` : undefined}"/>
+                 :style="{width: keyframe.duration ? `${24 + timeToPixels(keyframe.duration)}px` : undefined}"
+                  @dblclick.left="ctx.clock.seekAnimated(keyframe.time)"
+            />
 
             <div v-if="keyframe.label" class="keyframe-label" :style="labelStyle(index)">
               {{ keyframe.label }}
@@ -52,6 +54,10 @@ const props = defineProps({
     type: Number,
     required: true,
   },
+  active: {
+    type: Boolean,
+    required: true,
+  },
 })
 
 const timing = computed(() => props.node.timingInformation)
@@ -59,6 +65,8 @@ const hasValidTime = computed(() => timing.value!.startTime <= timing.value!.end
 const visibleDuration = computed(() => props.endTime - props.startTime)
 const duration = computed(() => Math.abs(timing.value!.endTime - timing.value!.startTime))
 const laneContents = ref<HTMLDivElement>()
+
+const emit = defineEmits(['select'])
 
 const actualStartTime = computed(() =>
     Math.min(timing.value!.startTime, timing.value!.endTime)
@@ -160,11 +168,13 @@ function handleKeyframeMousedown(evt: MouseEvent, keyframe: KeyframeInformation)
         bottom: 0;
         height: 100%;
         border-radius: 14px;
+        pointer-events: none;
 
         .keyframe {
           display: block;
           position: absolute;
           top: 2px;
+          pointer-events: all;
 
           .keyframe-handle {
             height: 24px;
@@ -227,6 +237,12 @@ function handleKeyframeMousedown(evt: MouseEvent, keyframe: KeyframeInformation)
         background-size: 7.07px 7.07px;
         border: 2px solid #ee594d;
       }
+    }
+  }
+
+  &.active {
+    .name {
+      color: #42B983;
     }
   }
 }

@@ -16,6 +16,8 @@ export class HitObjectsNode extends ElementNode {
         builder.outputs(1)
             .parameters(param => param
                 .string('timingAttribute', 'Timing attribute', {defaultValue: 'time'})
+                .bool('sliderEnds', 'Add Slider Ends', {defaultValue: 1})
+                .bool('sliderRepeats', 'Add Slider Repeats', {defaultValue: 1})
             )
     }
 
@@ -28,17 +30,40 @@ export class HitObjectsNode extends ElementNode {
             return CookResult.failure([new CookError(this, 'No valid beatmap selected')])
 
         const timingAttributeName = this.param('timingAttribute')!.get()
+        const sliderEnds = !!this.param('sliderEnds')!.get()
+        const sliderRepeats = !!this.param('sliderRepeats')!.get()
 
         geo.addAttribute(timingAttributeName, 'number');
 
         if (beatmap) {
             beatmap.hitObjects.forEach(hitObject => {
+                const playfieldOffset = new Vec2(60, 55)
+                const startPosition = new Vec2(hitObject.position[0], hitObject.position[1]).add(playfieldOffset)
+
                 if (hitObject.objectName === "circle" || hitObject.objectName === 'slider') {
                     const {index} = geo.addSprite(
-                        new Vec2(hitObject.position[0] + 60, hitObject.position[1] + 55),
+                        startPosition,
                         Origin.Centre,
                     )
                     geo.setAttribute(timingAttributeName, index, hitObject.startTime)
+                }
+                if (hitObject.objectName === 'slider') {
+                    const endPosition = new Vec2(hitObject.endPosition![0], hitObject.endPosition![1]).add(playfieldOffset)
+                    const repeatCount = hitObject.repeatCount!
+                    const repeatDuration = hitObject.duration! / hitObject.repeatCount!
+                    for (let i = 0; i < repeatCount; i++) {
+                        if (i < repeatCount - 1 && !sliderRepeats)
+                            continue;
+                        if (i === repeatCount - 1 && !sliderEnds)
+                            continue;
+
+                        const pos = i % 2 === 0 ? endPosition : startPosition;
+                        const {index} = geo.addSprite(
+                            pos,
+                            Origin.Centre,
+                        )
+                        geo.setAttribute(timingAttributeName, index, hitObject.startTime + repeatDuration * (i + 1))
+                    }
                 }
             })
         }

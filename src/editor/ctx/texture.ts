@@ -4,7 +4,7 @@ import {EditorContext} from "@/editor/ctx/context";
 import {ExpressionDependency} from "@/editor/compile";
 import * as path from "path";
 import * as parser from 'osu-parser'
-import {ref} from "vue";
+import {shallowRef} from "vue";
 
 export class FileStore {
 
@@ -12,7 +12,7 @@ export class FileStore {
 
     textureMap = new Map<string, number>()
 
-    beatmaps = ref<BeatmapData[]>([])
+    beatmaps = shallowRef<BeatmapData[]>([])
 
     async load(ctx: EditorContext, mapsetPath: string) {
         this.textures = []

@@ -84,7 +84,7 @@ export class MoveNodesCommand extends EditorCommand {
             this.ctx,
             this.nodes,
             this.from,
-            this.to
+            this.to,
         ).animated(this.isAnimated)
     }
 

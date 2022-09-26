@@ -2,7 +2,6 @@ import * as PIXI from 'pixi.js'
 import {SBElement, SBElementType} from "@/editor/objects";
 import {EditorContext} from "@/editor/ctx/context";
 import {Origin} from "@/editor/objects/origin";
-import {Transform} from "pixi.js";
 
 const pointGraphics = new PIXI.Graphics()
 pointGraphics.beginFill(0xffffff)
@@ -53,12 +52,10 @@ export class StoryboardElementContainer extends PIXI.Container {
             this.sprite!.texture = texture.texture
         }
 
-        const transform = new Transform()
-        transform.setFromMatrix(this.element.getTransform(time))
 
-        this.position.copyFrom(transform.position)
-        this.scale.copyFrom(transform.scale)
-        this.rotation = transform.rotation
+        this.position.copyFrom(this.element.getPos(time))
+        this.rotation = this.element.getRotation(time)
+        this.scale.copyFrom(this.element.getScale(time))
 
         this.alpha = this.element.getAlpha(time)
 

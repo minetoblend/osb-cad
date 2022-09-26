@@ -85,11 +85,13 @@ export class SBElement {
         el._moveXTimeline = this._moveXTimeline?.clone()
         el._moveYTimeline = this._moveYTimeline?.clone()
         el._scaleTimeline = this._scaleTimeline?.clone()
+        el._scaleVecTimeline = this._scaleVecTimeline?.clone()
         el._rotateTimeline = this._rotateTimeline?.clone()
         el._fadeTimeline = this._fadeTimeline?.clone()
         el._colorTimeline = this._colorTimeline?.clone()
         el._rotation = this._rotation
         el._color = this._color.clone()
+        el._scale = this._scale.clone()
         el._alpha = this._alpha
         return el
     }

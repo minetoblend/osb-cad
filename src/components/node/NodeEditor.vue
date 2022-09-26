@@ -1,5 +1,5 @@
 <template>
-  <div class="node-editor editor-pane" tabindex="-1">
+  <div class="node-editor editor-pane" tabIndex="-1">
     <shortcut-receiver @shortcut="handleShortcut" style="height: 100%;">
       <div style="height: 100% !important;">
         <node-editor-header @createNode="createNode"/>
@@ -183,7 +183,7 @@ function handleScroll(evt: WheelEvent) {
   const newPoint = new Vec2(evt.offsetX / newScale - currentLocation.value.position.x, evt.offsetY / newScale - currentLocation.value.position.y)
   const diff = newPoint.sub(currentPoint)
   currentLocation.value.position.move(diff)
-  currentLocation.value.scale = newScale;
+  currentLocation.value.scale = newScale
 }
 
 function handlePan(evt: MouseEvent) {

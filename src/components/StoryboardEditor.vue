@@ -8,31 +8,33 @@
 
   </dock-menu>
   <div class="storyboard-editor" v-loading="loading">
-    <splitpanes horizontal>
-      <pane size="100">
-        <splitpanes style="height: 100%">
-          <pane size="60">
-            <storyboard-viewport/>
-          </pane>
-          <pane size="40">
-            <splitpanes horizontal>
-              <pane>
-                <node-parameters/>
-              </pane>
-              <pane>
-                <node-editor/>
-              </pane>
-            </splitpanes>
-          </pane>
-        </splitpanes>
-      </pane>
-      <pane size="20" min-size="5">
-        <timeline-view/>
-      </pane>
-    </splitpanes>
+    <shortcut-receiver @shortcut="handleShortcut">
+      <splitpanes horizontal>
+        <pane size="100">
+          <splitpanes style="height: 100%">
+            <pane size="60">
+              <storyboard-viewport/>
+            </pane>
+            <pane size="40">
+              <splitpanes horizontal>
+                <pane>
+                  <node-parameters/>
+                </pane>
+                <pane>
+                  <node-editor/>
+                </pane>
+              </splitpanes>
+            </pane>
+          </splitpanes>
+        </pane>
+        <pane size="20" min-size="5">
+          <timeline-view/>
+        </pane>
+      </splitpanes>
+    </shortcut-receiver>
   </div>
-
 </template>
+
 <script setup lang="ts">
 import NodeEditor from "@/components/node/NodeEditor.vue";
 import {Pane, Splitpanes} from 'splitpanes'
@@ -42,6 +44,7 @@ import StoryboardViewport from "@/components/viewport/StoryboardViewport.vue";
 import TimelineView from "@/components/TimelineView.vue";
 import {DockMenu} from "vue-dock-menu";
 import {EditorContext} from "@/editor/ctx/context";
+import ShortcutReceiver from "@/components/ShortcutReceiver.vue";
 
 const props = defineProps({
   ctx: {
@@ -132,6 +135,32 @@ async function onCommandSelected({name, path}: { name: string, path: string }) {
     props.ctx.history.redo()
   }
 
+}
+
+
+function handleShortcut(evt: CustomEvent) {
+  switch (evt.detail as string) {
+    case 'ctrl+z':
+      evt.preventDefault()
+      props.ctx.history.undo()
+      break;
+    case 'ctrl+y':
+      evt.preventDefault()
+      props.ctx.history.redo()
+      break;
+    case 'ctrl+s':
+      evt.preventDefault()
+      props.ctx.save()
+      break;
+    case 'ctrl+shift+s':
+      evt.preventDefault()
+      props.ctx.save(true)
+      break;
+    case 'space':
+      evt.preventDefault()
+      props.ctx.clock.togglePlaying()
+      break;
+  }
 }
 
 </script>

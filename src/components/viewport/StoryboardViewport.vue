@@ -81,7 +81,7 @@ const statistics = shallowRef(new StoryboardStatistics())
 
 watchEffect(() => {
   if (playfield.value) {
-    statistics.value = playfield.value.updateSprites(ctx.currentGeometry.value, ctx.time.value)
+    statistics.value = playfield.value.updateSprites(ctx.currentGeometry.value, ctx.clock.animatedTime.value)
     renderer.render(stage)
   }
 })
