@@ -295,8 +295,6 @@ export class LayoutNodesCommand extends ProducingEditorCommand {
 
         const positions: [NodePath, Vec2][] = []
 
-        console.log('test')
-
         animateNodePosition(() => rootNodes.forEach((node, index) => {
             const {width, layout} = this.getTreeWidth(node, nodes)
             if (index === 0)
