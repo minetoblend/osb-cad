@@ -90,4 +90,11 @@ export class AnimatedValue<T extends IHasMathOperations<T>> {
         return count
     }
 
+    get firstCommand(): SpriteCommand<T> | undefined {
+        return this.commands[0]
+    }
+
+    get lastCommand(): SpriteCommand<T> | undefined {
+        return this.commands[this.commands.length - 1]
+    }
 }

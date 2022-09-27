@@ -7,7 +7,7 @@ import {
     MoveCommand,
     RotateCommand,
     ScaleCommand,
-    ScaleVecCommand
+    ScaleVecCommand, SpriteCommand
 } from "@/editor/objects/command";
 import {Easing} from "@/editor/objects/easing";
 import {Matrix} from "pixi.js";
@@ -351,6 +351,58 @@ export class SBElement {
         }
 
         return {count, overlapping}
+    }
+
+    isActiveAt(time: number) {
+        const firstCommand = this.firstCommand
+        if (!firstCommand || time < firstCommand.startTime)
+            return false
+        const lastCommand = this.lastCommand
+        if (!lastCommand || time > lastCommand.endTime)
+            return false
+        return true
+    }
+
+    get firstCommand(): SpriteCommand<any> | undefined {
+        let minCommand: SpriteCommand<any> | undefined = undefined;
+
+        for (const timeline of this.timelines) {
+            const command = timeline.firstCommand as SpriteCommand<any>
+            if (!minCommand || command && (command.startTime < minCommand.startTime)) {
+                minCommand = command
+            }
+        }
+
+        return minCommand
+    }
+
+    get lastCommand(): SpriteCommand<any> | undefined {
+        let maxCommand: SpriteCommand<any> | undefined = undefined;
+
+        for (const timeline of this.timelines) {
+            const command = timeline.lastCommand as SpriteCommand<any>
+            if (!maxCommand || command && (command.endTime > maxCommand.endTime)) {
+                maxCommand = command
+            }
+        }
+
+        return maxCommand
+    }
+
+    get timelines() {
+        return {
+            s: this,
+            * [Symbol.iterator]() {
+                if (this.s._moveTimeline) yield this.s._moveTimeline
+                if (this.s._moveXTimeline) yield this.s._moveXTimeline
+                if (this.s._moveYTimeline) yield this.s._moveYTimeline
+                if (this.s._scaleTimeline) yield this.s._scaleTimeline
+                if (this.s._scaleVecTimeline) yield this.s._scaleVecTimeline
+                if (this.s._rotateTimeline) yield this.s._rotateTimeline
+                if (this.s._fadeTimeline) yield this.s._fadeTimeline
+                if (this.s._colorTimeline) yield this.s._colorTimeline
+            }
+        }
     }
 }
 

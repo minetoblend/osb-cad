@@ -42,7 +42,7 @@ export class ScaleNode extends ElementNode {
                 endTime: endTime.getWithElement({idx, el, geo: [geo]}),
                 startScale: startScale.getWithElement({idx, el, geo: [geo]}),
                 endScale: endScale.getWithElement({idx, el, geo: [geo]}),
-                easing: Easing.QuadOut,
+                easing: Easing.BackOut,
             })
         })
 

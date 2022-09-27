@@ -41,8 +41,7 @@ export class FileStore {
                     scaleMode: SCALE_MODES.NEAREST,
                     mipmap: MIPMAP_MODES.OFF,
                     wrapMode: WRAP_MODES.MIRRORED_REPEAT,
-                    multisample: MSAA_QUALITY.NONE,
-
+                    multisample: MSAA_QUALITY.NONE
                 })
 
                 this.textureMap.set(path.relative(mapsetPath, filepath), this.textures.length)
