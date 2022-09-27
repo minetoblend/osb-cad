@@ -9,7 +9,7 @@ import {computed, reactive, ref, shallowRef, watch} from "vue";
 import {WorkerPool} from "@/editor/ctx/workerPool";
 import {SBCollection} from "@/editor/objects/collection";
 import {FileStore} from "@/editor/ctx/texture";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {SceneNode} from "@/editor/node/element";
 import type {SerializedEditorLocation, SerializedProject} from "@/editor/ctx/serialize";
 import {Scheduler} from "@/editor/ctx/scheduler";
@@ -37,7 +37,7 @@ export class EditorContext {
     readonly scheduler = new Scheduler()
     readonly activeBeatmap = ref<string>()
     readonly currentBeatmapObject = computed(() => {
-        this.markDependencyChanged(ExpressionDependency.Beatmap)
+        this.markDependencyChanged(NodeDependencyType.Beatmap)
         if (this.activeBeatmap.value) {
             return this.fileStore.beatmaps.value.find(it => it.Version === this.activeBeatmap.value)
         }
@@ -171,7 +171,7 @@ export class EditorContext {
         this.clock.seek(project.currentTime ?? 0)
     }
 
-    markDependencyChanged(...dependency: ExpressionDependency[]) {
+    markDependencyChanged(...dependency: NodeDependencyType[]) {
         this.root.value.markDependencyChanged(...dependency)
     }
 

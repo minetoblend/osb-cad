@@ -5,7 +5,7 @@ import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {Vec2} from "@/util/math";
 import {Origin} from "@/editor/objects/origin";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {RegisterNode} from "@/editor/node/registry";
 
 @RegisterNode('Sprite', ['fas', 'image'], 'objects')
@@ -49,6 +49,6 @@ export class SpriteNode extends ElementNode {
 
     updateDependencies() {
         super.updateDependencies();
-        this.dependencies.add(ExpressionDependency.Texture)
+        this.dependencies.add(NodeDependencyType.Texture)
     }
 }

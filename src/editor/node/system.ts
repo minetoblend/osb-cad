@@ -5,7 +5,7 @@ import {ref, shallowReactive, watch, WatchStopHandle} from "vue";
 import {EditorContext} from "@/editor/ctx/context";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {endsWithNumber, getNumberAtEnd} from "@/util/string";
 import type {Deserializer, SerializedNodeSystem} from "@/editor/ctx/serialize";
 import {NodeInput, NodeOutput} from "@/editor/node/input";
@@ -231,7 +231,7 @@ export abstract class NodeSystem<N extends Node> extends Node {
         super.destroy()
     }
 
-    markDependencyChanged(...dependencies: ExpressionDependency[]) {
+    markDependencyChanged(...dependencies: NodeDependencyType[]) {
         this.nodes.forEach(it => {
             dependencies.forEach(dependency => {
                 if (it.hasDependency(dependency))

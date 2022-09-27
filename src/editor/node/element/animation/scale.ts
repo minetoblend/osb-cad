@@ -4,7 +4,7 @@ import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {NodeBuilder, TimingInformation} from "@/editor/node";
 import {Easing} from "@/editor/objects/easing";
 import {RegisterNode} from "@/editor/node/registry";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 
 @RegisterNode('Scale', ['fas', 'up-right-and-down-left-from-center'], 'commands')
 export class ScaleNode extends ElementNode {
@@ -50,7 +50,7 @@ export class ScaleNode extends ElementNode {
     }
 
     get timingInformation(): TimingInformation | undefined {
-        if (this.hasDependency(ExpressionDependency.ElementIndex))
+        if (this.hasDependency(NodeDependencyType.ElementIndex))
             return undefined
         const start = this.param('startTime')!.get()
         const end = this.param('endTime')!.get()

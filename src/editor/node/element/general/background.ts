@@ -5,7 +5,7 @@ import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {Origin} from "@/editor/objects/origin";
 import {Vec2} from "@/util/math";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {RegisterNode} from "@/editor/node/registry";
 
 @RegisterNode('Background', ['fas', 'panorama'], 'objects')
@@ -54,6 +54,6 @@ export class BackgroundNode extends ElementNode {
 
     updateDependencies() {
         super.updateDependencies();
-        this.dependencies.add(ExpressionDependency.Texture)
+        this.dependencies.add(NodeDependencyType.Texture)
     }
 }

@@ -3,7 +3,7 @@ import {EditorContext} from "@/editor/ctx/context";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {NodeBuilder, TimingInformation} from "@/editor/node";
 import {Easing} from "@/editor/objects/easing";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {DragOptions} from "@/util/event";
 import {SetNodeParameterOperation} from "@/editor/ctx/operations/parameter";
 import {RegisterNode} from "@/editor/node/registry";
@@ -52,7 +52,7 @@ export class FadeNode extends ElementNode {
     }
 
     get timingInformation(): TimingInformation | undefined {
-        if (this.hasDependency(ExpressionDependency.ElementIndex))
+        if (this.hasDependency(NodeDependencyType.ElementIndex))
             return undefined
         const start = this.param('startTime')!.get()
         const end = this.param('endTime')!.get()
@@ -125,7 +125,7 @@ export class FadeInOutNode extends ElementNode {
     }
 
     get timingInformation(): TimingInformation | undefined {
-        if (this.hasDependency(ExpressionDependency.ElementIndex)) return undefined;
+        if (this.hasDependency(NodeDependencyType.ElementIndex)) return undefined;
         const startTime = this.param('startTime')!.get()
         const endTime = this.param('endTime')!.get()
         const duration = this.param('fadeDuration')!.get()

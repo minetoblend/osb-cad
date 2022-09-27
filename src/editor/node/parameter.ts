@@ -3,7 +3,7 @@ import {
     CompiledExpression,
     compileExpression,
     compileStatements,
-    ExpressionDependency,
+    NodeDependencyType,
     globalFunctions
 } from "@/editor/compile";
 import {Node} from "@/editor/node/index";
@@ -66,7 +66,7 @@ export abstract class NodeParameter {
         return this.value.value
     }
 
-    getDependencies(): ExpressionDependency[] {
+    getDependencies(): NodeDependencyType[] {
         if (this.value.value instanceof CompiledExpression)
             return [...this.value.value.dependencies]
         return []
@@ -251,7 +251,7 @@ export class CodeNodeParameter extends NodeParameter {
         super.set(value);
     }
 
-    getDependencies(): ExpressionDependency[] {
+    getDependencies(): NodeDependencyType[] {
         return [...this.compiledCode?.dependencies ?? []]
     }
 

@@ -155,6 +155,17 @@ export class SBCollection {
 
         return this;
     }
+
+    grow(size: number) {
+
+        this.elements.push(...Array.from({length: size}, () => new SBElement(
+            Vec2.zero(),
+            Origin.TopLeft,
+            -1,
+            Vec2.one()
+        )))
+        this.ensureSize()
+    }
 }
 
 export abstract class AttributeContainer<T> {

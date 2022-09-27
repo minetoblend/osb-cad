@@ -2,7 +2,7 @@ import {ElementNode} from "@/editor/node/element";
 import {CookContext, CookError, CookResult} from "@/editor/node/cook.context";
 import {KeyframeInformation, NodeBuilder, TimingInformation} from "@/editor/node";
 import {SBCollection} from "@/editor/objects/collection";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {Vec2} from "@/util/math";
 import {Origin} from "@/editor/objects/origin";
 import {RegisterNode} from "@/editor/node/registry";
@@ -73,7 +73,7 @@ export class HitObjectsNode extends ElementNode {
 
     updateDependencies() {
         super.updateDependencies();
-        this.dependencies.add(ExpressionDependency.Beatmap)
+        this.dependencies.add(NodeDependencyType.Beatmap)
     }
 
     get timingInformation(): TimingInformation | undefined {

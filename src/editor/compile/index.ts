@@ -83,7 +83,7 @@ export const builtinStatementMethods = new Set<string>([
 
 export function compileStatements(code: string) {
     const attributes = new Set<string>()
-    const dependencies = new Set<ExpressionDependency>()
+    const dependencies = new Set<NodeDependencyType>()
 
     code = '(ctx, el, idx) => {\n' + code.trim() + '\n}'
 
@@ -109,7 +109,7 @@ export function compileStatements(code: string) {
 
 export function compileExpression(expression: string, withIndex: boolean): CompiledExpression {
     const attributes = new Set<string>()
-    const dependencies = new Set<ExpressionDependency>()
+    const dependencies = new Set<NodeDependencyType>()
 
     const ast = parser.parse('(ctx, el, idx) => ' + expression.trim())
 
@@ -125,12 +125,12 @@ export function compileExpression(expression: string, withIndex: boolean): Compi
     return new CompiledExpression(compiledFunction, expression, attributes, dependencies)
 }
 
-export enum ExpressionDependency {
+export enum NodeDependencyType {
     ElementIndex,
     Time,
     Texture,
     Beatmap,
-
+    Audio,
 }
 
 export const Globals = new Set<string>(
@@ -138,7 +138,7 @@ export const Globals = new Set<string>(
 );
 
 export class CompiledCodeBlock {
-    constructor(readonly expression: (ctx: any, el: SBElement, idx: number) => any, readonly attributes: Set<string>, readonly dependencies: Set<ExpressionDependency>) {
+    constructor(readonly expression: (ctx: any, el: SBElement, idx: number) => any, readonly attributes: Set<string>, readonly dependencies: Set<NodeDependencyType>) {
         console.log(expression)
     }
 
@@ -158,7 +158,7 @@ export class CompiledExpression {
     constructor(readonly expression: (ctx: any, el?: SBElement, idx?: number) => any,
                 readonly source: string,
                 readonly attribtues: Set<string>,
-                readonly dependencies: Set<ExpressionDependency>,
+                readonly dependencies: Set<NodeDependencyType>,
     ) {
         this.isConstant = attribtues.size === 0 && dependencies.size === 0
 
@@ -171,7 +171,7 @@ export class CompiledExpression {
     cachedValue?: any
 
     get perElement() {
-        return this.dependencies.has(ExpressionDependency.ElementIndex)
+        return this.dependencies.has(NodeDependencyType.ElementIndex)
     }
 
     evaluate(ctx: ExpressionContext, el?: SBElement, idx?: number) {

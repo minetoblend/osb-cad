@@ -1,7 +1,7 @@
 import * as PIXI from 'pixi.js'
 import {MIPMAP_MODES, MSAA_QUALITY, SCALE_MODES, WRAP_MODES} from 'pixi.js'
 import {EditorContext} from "@/editor/ctx/context";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import * as path from "path";
 import * as parser from 'osu-parser'
 import {shallowRef} from "vue";
@@ -24,7 +24,7 @@ export class FileStore {
 
         await this.loadDir(mapsetPath, mapsetPath)
 
-        ctx.markDependencyChanged(ExpressionDependency.Texture, ExpressionDependency.Beatmap)
+        ctx.markDependencyChanged(NodeDependencyType.Texture, NodeDependencyType.Beatmap)
     }
 
     async loadDir(mapsetPath: string, dir: string) {

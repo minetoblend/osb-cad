@@ -8,7 +8,7 @@ import {SimulationNode} from "@/editor/node/element/particle/simulation";
 import {NullNode} from "@/editor/node/element";
 import {Vec2} from "@/util/math";
 import {SBCollection} from "@/editor/objects/collection";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {MarkDirtyReason} from "@/editor/node/markDirty";
 import {NodeDependency} from "@/editor/node/dependency";
 import {animationFrameAsPromise} from "@/util/promise";
@@ -32,12 +32,12 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
 
     updateDependencies() {
         super.updateDependencies();
-        this.dependencies.add(ExpressionDependency.Time)
+        this.dependencies.add(NodeDependencyType.Time)
     }
 
     markDirty(reason?: MarkDirtyReason, visited: Set<Node> = new Set<Node>()): void {
         super.markDirty(reason, visited);
-        if (reason?.expressionDependency !== ExpressionDependency.Time)
+        if (reason?.expressionDependency !== NodeDependencyType.Time)
             this.simulationDirty = true
     }
 

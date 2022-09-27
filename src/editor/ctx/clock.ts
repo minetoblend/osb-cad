@@ -1,14 +1,14 @@
 import {computed, reactive, shallowRef, watch} from "vue";
 import gsap from 'gsap'
 import {EditorContext} from "@/editor/ctx/context";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import {Sound} from "@/editor/audio";
 import * as PIXI from 'pixi.js'
 import {clamp} from "@/util/math";
 
 export class EditorClock {
     constructor(private readonly ctx: EditorContext) {
-        watch(this.time, () => ctx.markDependencyChanged(ExpressionDependency.Time))
+        watch(this.time, () => ctx.markDependencyChanged(NodeDependencyType.Time))
 
         PIXI.Ticker.shared.add(() => {
             if (this.isPlaying) {
@@ -73,6 +73,7 @@ export class EditorClock {
             sound.currentTime = clamp(this.time.value / 1000, 0, sound.duration)
         }
         this.sound.value = sound
+        this.ctx.markDependencyChanged(NodeDependencyType.Audio)
     }
 
     get isPlaying() {

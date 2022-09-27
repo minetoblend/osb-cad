@@ -8,7 +8,7 @@ import {NodeInterfaceBuilder, NodeInterfaceItem} from "@/editor/node/interface";
 import {EditorContext} from "@/editor/ctx/context";
 import {CircularDependencyError, NodeError} from "@/editor/node/error";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 import type {SerializedNode} from "@/editor/ctx/serialize";
 import {Deserializer} from "@/editor/ctx/serialize";
 import {NodeInput, NodeOutput} from "@/editor/node/input";
@@ -29,7 +29,7 @@ export abstract class Node implements IHasPosition {
     inputs: NodeInput[] = []
     outputs: NodeOutput[] = []
     readonly interface: NodeInterfaceItem[] = []
-    protected readonly dependencies = new Set<ExpressionDependency>()
+    protected readonly dependencies = new Set<NodeDependencyType>()
     resultCache: any[] | null = null
 
     constructor(readonly ctx: EditorContext, name: string) {
@@ -173,7 +173,7 @@ export abstract class Node implements IHasPosition {
         return this.parent?.getConnectionsLeadingTo(this).map(it => it.from.node) ?? []
     }
 
-    hasDependency(...dependency: ExpressionDependency[]) {
+    hasDependency(...dependency: NodeDependencyType[]) {
         return dependency.some(d => this.dependencies.has(d))
     }
 

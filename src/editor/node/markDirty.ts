@@ -1,14 +1,14 @@
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 
 export class MarkDirtyReason {
 
-    expressionDependency?: ExpressionDependency
+    expressionDependency?: NodeDependencyType
 
-    private constructor(expressionDependency?: ExpressionDependency) {
+    private constructor(expressionDependency?: NodeDependencyType) {
         this.expressionDependency = expressionDependency;
     }
 
-    static expressionDependency(dependency: ExpressionDependency) {
+    static expressionDependency(dependency: NodeDependencyType) {
         return new MarkDirtyReason(dependency)
     }
 }

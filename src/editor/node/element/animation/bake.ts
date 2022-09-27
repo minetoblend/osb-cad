@@ -6,7 +6,7 @@ import {NodeDependency} from "@/editor/node/dependency";
 import {SBCollection} from "@/editor/objects/collection";
 import {Easing} from "@/editor/objects/easing";
 import {MarkDirtyReason} from "@/editor/node/markDirty";
-import {ExpressionDependency} from "@/editor/compile";
+import {NodeDependencyType} from "@/editor/compile";
 
 @RegisterNode('BakeAnimation', ['fas', 'bread-slice'], 'animation')
 export class BakeAnimationNode extends ElementNode {
@@ -107,7 +107,7 @@ export class BakeAnimationNode extends ElementNode {
     }
 
     markDirty(reason?: MarkDirtyReason, visited: Set<Node> = new Set<Node>()) {
-        if (reason?.expressionDependency === ExpressionDependency.Time) {
+        if (reason?.expressionDependency === NodeDependencyType.Time) {
             return;
         }
         super.markDirty(reason, visited);

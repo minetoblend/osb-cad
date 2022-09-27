@@ -48,7 +48,7 @@ export class PlayfieldContainer extends PIXI.Container {
         let elements = geometry.elements.filter(it => {
             const {count, overlapping} = it.commandCountAt(time)
             statistics.add(count, overlapping)
-            return count > 0 || it.isActiveAt(time)
+            return count > 0 || it.isActiveAt(time) || it.hasNoAnimation
         })
 
         if (elements.length < this.spriteContainer.children.length) {

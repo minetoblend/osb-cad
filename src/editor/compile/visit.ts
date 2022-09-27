@@ -1,12 +1,12 @@
 import {NodePath, types, Visitor} from "@babel/core";
 import {AssignmentExpression, CallExpression, Identifier} from "@babel/types";
-import {ExpressionDependency} from "@/editor/compile/index";
+import {NodeDependencyType} from "@/editor/compile/index";
 
 
-export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean, withIndex: boolean, dependencies: Set<ExpressionDependency>, attribtues: Set<string>) {
+export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean, withIndex: boolean, dependencies: Set<NodeDependencyType>, attribtues: Set<string>) {
     if (path.node.name === 'idx') {
         if (path.node.start !== 10) { //skip the index being passed into the method
-            dependencies.add(ExpressionDependency.ElementIndex)
+            dependencies.add(NodeDependencyType.ElementIndex)
             if (!withIndex)
                 throw Error('Cannot access individual sprites')
             return;
@@ -15,7 +15,7 @@ export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean,
 
     if (path.node.name === 'el') {
         if (path.node.start !== 6) { //skip the index being passed into the method
-            dependencies.add(ExpressionDependency.ElementIndex)
+            dependencies.add(NodeDependencyType.ElementIndex)
             if (!withIndex)
                 throw Error('Cannot access individual sprites')
             return;
@@ -28,7 +28,7 @@ export function visitIdentifier(path: NodePath<Identifier>, allowWrite: boolean,
         }
 
         if (path.node.name.substring(1) === 'TIME') {
-            dependencies.add(ExpressionDependency.Time)
+            dependencies.add(NodeDependencyType.Time)
         }
 
 
@@ -133,14 +133,14 @@ export function visitCallExpression(path: NodePath<CallExpression>, builtinMetho
     }
 }
 
-export function createExpressionVisitor(withIndex: boolean, attributes: Set<string>, dependencies: Set<ExpressionDependency>, builtinMethods: Set<string>): Visitor {
+export function createExpressionVisitor(withIndex: boolean, attributes: Set<string>, dependencies: Set<NodeDependencyType>, builtinMethods: Set<string>): Visitor {
     return {
         Identifier: path => visitIdentifier(path, false, withIndex, dependencies, attributes),
         CallExpression: path => visitCallExpression(path, builtinMethods)
     }
 }
 
-export function createCodeBlockVisitor(attributes: Set<string>, dependencies: Set<ExpressionDependency>, builtinMethods: Set<string>): Visitor {
+export function createCodeBlockVisitor(attributes: Set<string>, dependencies: Set<NodeDependencyType>, builtinMethods: Set<string>): Visitor {
     return {
         Identifier: path => visitIdentifier(path, true, true, dependencies, attributes),
         CallExpression: path => visitCallExpression(path, builtinMethods)
