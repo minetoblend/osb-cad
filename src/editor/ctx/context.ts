@@ -64,6 +64,28 @@ export class EditorContext {
                 this.clock.setSound()
             }
         })
+        requestAnimationFrame(() => this.update())
+    }
+
+    readonly lastUpdate = ref(performance.now())
+    readonly delta = ref(0)
+
+    readonly updateTimes = reactive<number[]>([])
+
+    readonly fps = computed(() => Math.floor(1000 /
+        (this.updateTimes.reduce((a, b) => a + b, 0) / this.updateTimes.length)
+    ))
+
+    update() {
+        const now = performance.now()
+        const delta = now - this.lastUpdate.value;
+        this.delta.value = delta
+        if (this.updateTimes.length > 30)
+            this.updateTimes.pop()
+        this.updateTimes.unshift(delta)
+        this.lastUpdate.value = performance.now()
+
+        requestAnimationFrame(() => this.update())
     }
 
     setupEvents() {

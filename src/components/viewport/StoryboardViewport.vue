@@ -4,6 +4,9 @@
       <div class="viewport-overlay">
         <div class="command-stats">
           <div>
+            fps: {{ ctx.fps }}
+          </div>
+          <div>
             Command count: {{ statistics.commandCount }}
           </div>
           <template v-if="statistics.spritesWithOverlappingCommandCount">
@@ -29,10 +32,10 @@ import {StoryboardStatistics} from "@/components/viewport/statistics";
 
 const viewportContainer = ref<HTMLDivElement>()
 
-//let app!: PIXI.Application
 const ctx = useContext()
 const stage = new PIXI.Container()
 const playfield = shallowRef<PlayfieldContainer>()
+const fpsGraph = new PIXI.Graphics()
 
 const renderer = new PIXI.Renderer({
   width: 640,
@@ -75,6 +78,7 @@ function init() {
 function addViewportContainer() {
   playfield.value = new PlayfieldContainer(ctx)
   stage.addChild(playfield.value)
+  stage.addChild(fpsGraph)
 }
 
 const statistics = shallowRef(new StoryboardStatistics())
@@ -86,6 +90,20 @@ watchEffect(() => {
   }
 })
 
+watchEffect(() => {
+  fpsGraph.clear()
+  fpsGraph.lineStyle(2, 0xffffff)
+
+  ctx.updateTimes.forEach((delta, i) => {
+    if (i === 0) {
+      fpsGraph.moveTo(150, 100 - delta)
+    } else {
+      fpsGraph.lineTo(150 + i * 5, 100 - delta)
+    }
+  })
+  renderer.render(stage)
+
+})
 </script>
 
 <style>

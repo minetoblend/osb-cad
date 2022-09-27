@@ -14,7 +14,7 @@
       </div>
       <div class="node-status-indicator"></div>
       <button class="node-toggle" :class="{selected: node.isOutput}" @click.prevent="setOutput">
-        <icon :icon="['far', 'eye']" fixed-width/>
+        <icon :icon="['fas', 'flag-checkered']" fixed-width/>
       </button>
     </div>
     <div class="node-inputs">
