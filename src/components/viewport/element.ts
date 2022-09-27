@@ -1,4 +1,5 @@
 import * as PIXI from 'pixi.js'
+import {BLEND_MODES} from 'pixi.js'
 import {SBElement, SBElementType} from "@/editor/objects";
 import {EditorContext} from "@/editor/ctx/context";
 import {Origin} from "@/editor/objects/origin";
@@ -57,15 +58,19 @@ export class StoryboardElementContainer extends PIXI.Container {
         this.rotation = this.element.getRotation(time)
         this.scale.copyFrom(this.element.getScale(time))
 
-        this.alpha = this.element.getAlpha(time)
+        const alpha = this.element.getAlpha(time)
+        this.alpha = alpha
 
         if (this.sprite) {
             const color = this.element.getColor(time)
+            color.mulF(alpha)
             this.sprite.tint = color.hex
         }
 
 
         if (this.sprite) {
+            this.sprite.blendMode = BLEND_MODES.ADD
+
             const sprite = this.sprite
             switch (this.element._origin) {
                 case Origin.TopLeft:
