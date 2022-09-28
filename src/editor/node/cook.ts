@@ -19,18 +19,20 @@ export class CookTask implements Task {
     cooking = new Set<Node>()
 
     async run(): Promise<void> {
-        console.warn('running cook job for ' + this.path.toString())
+        //console.warn('running cook job for ' + this.path.toString())
         try {
             const node = this.ctx.getObject(this.path)
             if (!node)
                 return;
-            const start = Date.now()
+
+            console.time('cook job')
             const result = await this.runInternal(node)
+            console.timeEnd('cook job')
             if (result && result.type === CookResultType.Success && this.finished) {
                 this.ctx.currentGeometry.value = result.outputData[0]
             }
 
-            console.warn(`cook job for ${this.path.toString()} took ${Date.now() - start}ms`)
+            //console.warn(`cook job for ${this.path.toString()} took ${Date.now() - start}ms`)
         } catch (e) {
             console.error(e)
             if (e instanceof NodeError) {
@@ -100,7 +102,10 @@ export class CookTask implements Task {
 
             const ctx = new CookContext(this.ctx, dependencies, dependency, () => new SBCollection())
 
+            console.time(`cook ${node.path.toString()} (${ctx.TIME})`)
             result = await node.cook(ctx)
+            console.timeEnd(`cook ${node.path.toString()} (${ctx.TIME})`)
+
             dependency.result = result
 
             if (result.type === CookResultType.Success) {

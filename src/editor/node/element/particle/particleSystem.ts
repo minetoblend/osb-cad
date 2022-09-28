@@ -108,9 +108,10 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
 
             const lastFrame = simulation[simulation.length - 1] ?? new SimulationCachedFrame(time - interval, new SBCollection())
 
-            await animationFrameAsPromise()
+            if (performance.now() - this.lastUpdate > 50)
+                await animationFrameAsPromise()
 
-            // console.log('cooking frame ' + time)
+            console.log('cooking frame ' + time)
 
             const dependency = new NodeDependency(outputNode, 0, 0, true)
             dependency.time = time

@@ -51,6 +51,8 @@ export class PlayfieldContainer extends PIXI.Container {
             return count > 0 || it.isActiveAt(time) || it.hasNoAnimation
         })
 
+        statistics.visibleSprites = elements.length
+
         if (elements.length < this.spriteContainer.children.length) {
             this.spriteContainer.removeChildren(elements.length).forEach(it => it.destroy({children: true}))
         }

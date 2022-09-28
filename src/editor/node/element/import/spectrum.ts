@@ -71,13 +71,14 @@ export class AudioSpectrumNode extends ElementNode {
         })
 
         const geo = new SBCollection()
+        spectrum.shift() //remove first item
 
         geo.grow(spectrum.length)
 
         const frequencyAttr = geo.addAttribute('frequency', 'number')
         const amplitudeAttr = geo.addAttribute('amplitude', 'number')
 
-        spectrum.shift() //remove first item
+
 
         spectrum.forEach((value, index) => {
             const frequency = (index + 1) * sound.buffer.sampleRate / frameSize

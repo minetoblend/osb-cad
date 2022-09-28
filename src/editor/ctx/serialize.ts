@@ -39,6 +39,9 @@ export interface SerializedNode {
     name: string
     position: Vec2Like
     parameters: SerializedNodeParam[]
+
+    inputs?: any
+    outputs?: any
 }
 
 export interface SerializedNodeSystem extends SerializedNode {

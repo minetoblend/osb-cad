@@ -16,6 +16,7 @@ export class EmitterNode extends SimulationNode {
                 .int('startTime', 'Start Time')
                 .int('endTime', 'End Time')
                 .vec2('velocity', 'Start Velocity', {withIndex: true})
+                .int('lifetime', 'Lifetime', {withIndex: true, defaultValue: 1000})
             )
     }
 
@@ -29,8 +30,10 @@ export class EmitterNode extends SimulationNode {
 
         const timeAttribute = 'time'
 
-        const velocityXAttribute = this.param('velocity.x')!
-        const velocityYAttribute = this.param('velocity.y')!
+        const velocityXParam = this.param('velocity.x')!
+        const velocityYParam = this.param('velocity.y')!
+        const lifetimeParam = this.param('lifetime')!
+
 
         if (ctx.TIME >= startTime && ctx.TIME <= endTime) {
             const emitGeo = ctx.getInput(1)
@@ -38,6 +41,10 @@ export class EmitterNode extends SimulationNode {
 
             if (!emitGeo.hasAttribute('vel'))
                 emitGeo.addAttribute('vel', 'vec2')
+            if (!emitGeo.hasAttribute('age'))
+                emitGeo.addAttribute('age', 'number')
+            if (!emitGeo.hasAttribute('lifetime'))
+                emitGeo.addAttribute('lifetime', 'number')
 
             if (hasTime) {
                 emitGeo.filter((index) => {
@@ -47,19 +54,19 @@ export class EmitterNode extends SimulationNode {
             }
 
             emitGeo.forEach((index, el) => {
-                if (hasTime) {
-
-                }
-
                 emitGeo.setAttribute('vel', index,
                     new Vec2(
-                        velocityXAttribute.getWithElement({
+                        velocityXParam.getWithElement({
                             idx: index, el, geo: [emitGeo], ...ctx
                         }),
-                        velocityYAttribute.getWithElement({
+                        velocityYParam.getWithElement({
                             idx: index, el, geo: [emitGeo], ...ctx
                         })
                     ))
+                emitGeo.setAttribute('age', index, 0)
+                emitGeo.setAttribute('lifetime', index, lifetimeParam.getWithElement({
+                    idx: index, el, geo: [emitGeo], ...ctx
+                }))
                 el.offsetAnimation(ctx.TIME)
             })
 

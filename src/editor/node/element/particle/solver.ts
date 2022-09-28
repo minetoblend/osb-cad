@@ -25,6 +25,16 @@ export class ParticleSolverNode extends SimulationNode {
 
         const delta = ctx.DELTA / 250
 
+
+        geo.filter((index) => {
+            const lifetime = geo.getAttribute<number>('lifetime', index)
+            const age = geo.getAttribute<number>('age', index) + ctx.DELTA
+            if (age <= lifetime)
+                geo.setAttribute('age', index, age)
+            return age < lifetime
+        })
+
+
         geo.forEach((index, el) => {
             const vel = geo.getAttribute<Vec2>('vel', index)
             const force = geo.getAttribute<Vec2>('force', index)
