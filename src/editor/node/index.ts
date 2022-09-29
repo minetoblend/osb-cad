@@ -1,7 +1,7 @@
 import {GetWithElementContext, NodeParameter} from "@/editor/node/parameter";
 import {Color, Vec2} from "@/util/math";
 import {Ref, ref, shallowRef} from "vue";
-import {NodePath} from "@/editor/node/path";
+import {EditorPath} from "@/editor/node/path";
 import {IHasPosition} from "@/types/position";
 import type {NodeSystem} from "@/editor/node/system";
 import {NodeInterfaceBuilder, NodeInterfaceItem} from "@/editor/node/interface";
@@ -49,10 +49,10 @@ export abstract class Node implements IHasPosition {
         return this._params
     }
 
-    get path(): NodePath {
+    get path(): EditorPath {
         if (this.parent)
             return this.parent.path.child(this.name.value)
-        return new NodePath([])
+        return new EditorPath([])
     }
 
     get isSelected() {
@@ -71,7 +71,32 @@ export abstract class Node implements IHasPosition {
         return undefined
     }
 
-    abstract cook(ctx: CookContext): Promise<CookResult>
+    cookDuration: number = 0
+    ownCookDuration: number = 0
+
+    cookWithStatistics(ctx: CookContext): CookResult | Promise<CookResult> {
+        const startTime = performance.now()
+        const result = this.cook(ctx)
+        if (result instanceof Promise) {
+            return result.then(result => {
+                result.duration = performance.now() - startTime
+                this.ownCookDuration += result.duration
+                this.cookDuration += result.duration
+                return result
+            })
+        }
+
+        this.ownCookDuration += result.duration
+        this.cookDuration += result.duration
+        return result
+    }
+
+    resetStats() {
+        this.cookDuration = 0
+        this.ownCookDuration = 0
+    }
+
+    abstract cook(ctx: CookContext): CookResult | Promise<CookResult>
 
     define?(builder: NodeBuilder): void
 
@@ -92,7 +117,7 @@ export abstract class Node implements IHasPosition {
         return this._params.get(name)
     }
 
-    find(path: NodePath): Node | null {
+    find(path: EditorPath): Node | null {
         if (path.length === 0)
             return this
         return null
@@ -133,10 +158,15 @@ export abstract class Node implements IHasPosition {
         if (this.parent) {
             this.inputs.forEach((input, inputIndex) => {
                 const connections = input.connections
+
                 connections.forEach((connection) => {
                     dependencies
-                        .push(new NodeDependency(connection.from.node, inputIndex, connection.from.index))
+                        .push(new NodeDependency(connection.from.node, inputIndex, connection.from.index, false, input.name))
                 })
+
+                if (connections.length === 0) {
+                    dependencies.push(NodeDependency.empty(inputIndex, input.name))
+                }
             })
         }
 
@@ -211,7 +241,15 @@ export abstract class Node implements IHasPosition {
             type: this.type,
             name: this.name.value,
             position: this.position.value,
-            parameters: params
+            parameters: params,
+            icon: this.icon,
+            inputs: this.inputs.map(it => ({
+                name: it.name,
+                multiple: it.multiple
+            })),
+            outputs: this.outputs.map(it => ({
+                name: it.name,
+            }))
         }
     }
 
@@ -251,6 +289,18 @@ export abstract class Node implements IHasPosition {
 
     get type(): string {
         return this.constructor.name
+    }
+
+    getChild(name: string) {
+        return this.params.get(name)
+    }
+
+    getParent() {
+        return this.parent
+    }
+
+    canEvaluate(): boolean {
+        return false
     }
 }
 

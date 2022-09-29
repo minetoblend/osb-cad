@@ -246,7 +246,7 @@ export class CodeNodeParameter extends NodeParameter {
     compiledCode?: CompiledCodeBlock
 
     set(value: any) {
-        this.compiledCode = compileStatements(value)
+        this.compiledCode = compileStatements(value, this.node.path, this.node.ctx)
 
         super.set(value);
     }
@@ -256,8 +256,9 @@ export class CodeNodeParameter extends NodeParameter {
     }
 
     initFrom(serializedParam: SerializedNodeParam) {
+        console.log(this.node)
         this.value.value = serializedParam.value.value
-        this.compiledCode = compileStatements(serializedParam.value.value)
+        this.compiledCode = compileStatements(serializedParam.value.value, this.node.path, this.node.ctx)
     }
 }
 

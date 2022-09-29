@@ -20,7 +20,6 @@ export class CommandHistory {
         if (!lastCommand)
             return false;
 
-        console.log(lastCommand)
 
         let redo;
         if (lastCommand.createUndo)
@@ -58,7 +57,6 @@ export class CommandHistory {
     }
 
     execute(command: EditorCommand) {
-        console.log(command)
         let undo;
         if (command.createUndo)
             undo = command.createUndo()

@@ -64,7 +64,6 @@ export class NodeRegistry {
 
 export function RegisterNode(label: string, icon: [string, string], category?: string, type: keyof typeof NodeRegistry = 'element'): ClassDecorator {
     return (target) => {
-        console.log(target.name)
         NodeRegistry[type].register(target.name, new NodeMetadata(
             target.name,
             target as unknown as Constructor<Node>,

@@ -3,6 +3,7 @@ import {SimulationNode} from "@/editor/node/element/particle/simulation";
 import {NodeBuilder, TimingInformation} from "@/editor/node";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {Vec2} from "@/util/math";
+import {AttributeType} from "@/editor/objects/attribute";
 
 @RegisterNode('Emitter', ['fas', 'spray-can-sparkles'], 'simulation', 'simulation')
 export class EmitterNode extends SimulationNode {
@@ -21,8 +22,7 @@ export class EmitterNode extends SimulationNode {
     }
 
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         const startTime = this.param('startTime')!.get()
         const endTime = this.param('endTime')!.get()
 
@@ -40,11 +40,11 @@ export class EmitterNode extends SimulationNode {
             const hasTime = emitGeo.hasAttribute(timeAttribute)
 
             if (!emitGeo.hasAttribute('vel'))
-                emitGeo.addAttribute('vel', 'vec2')
+                emitGeo.addAttribute('vel', AttributeType.Vec2)
             if (!emitGeo.hasAttribute('age'))
-                emitGeo.addAttribute('age', 'number')
+                emitGeo.addAttribute('age', AttributeType.Float)
             if (!emitGeo.hasAttribute('lifetime'))
-                emitGeo.addAttribute('lifetime', 'number')
+                emitGeo.addAttribute('lifetime', AttributeType.Float)
 
             if (hasTime) {
                 emitGeo.filter((index) => {

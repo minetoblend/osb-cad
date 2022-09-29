@@ -5,7 +5,7 @@ import {
     ProducingEditorCommand
 } from "@/editor/ctx/editorCommand";
 import {EditorContext} from "@/editor/ctx/context";
-import {NodePath} from "@/editor/node/path";
+import {EditorPath} from "@/editor/node/path";
 import {NodeSystem} from "@/editor/node/system";
 import {Deserializer, SerializedNode} from "@/editor/ctx/serialize";
 import {NodeConnection} from "@/editor/node/connection";
@@ -18,7 +18,7 @@ import {Vec2} from "@/util/math";
 export class RenameNodeCommand extends EditorCommand {
     name: string = 'Rename Node';
 
-    constructor(ctx: EditorContext, readonly node: NodePath, readonly newName: string) {
+    constructor(ctx: EditorContext, readonly node: EditorPath, readonly newName: string) {
         super(ctx);
     }
 
@@ -37,7 +37,7 @@ export class RenameNodeCommand extends EditorCommand {
 export class DeleteNodesCommand extends EditorCommand {
     name: string = 'Delete Node'
 
-    constructor(ctx: EditorContext, readonly nodes: NodePath[]) {
+    constructor(ctx: EditorContext, readonly nodes: EditorPath[]) {
         super(ctx);
     }
 
@@ -81,7 +81,7 @@ export class CreateNodeCommand extends EditorCommand {
     name = 'Create Node'
 
     constructor(ctx: EditorContext,
-                readonly parent: NodePath,
+                readonly parent: EditorPath,
                 type: string,
                 readonly data?: Partial<SerializedNode>) {
         super(ctx);
@@ -116,7 +116,7 @@ export class CreateNodeCommand extends EditorCommand {
 export class SetOutputNodeCommand extends EditorCommand {
     name: string = 'Rename Node';
 
-    constructor(ctx: EditorContext, readonly system: NodePath, readonly node?: string) {
+    constructor(ctx: EditorContext, readonly system: EditorPath, readonly node?: string) {
         super(ctx);
     }
 
@@ -146,9 +146,9 @@ export class AddConnectionCommand extends EditorCommand {
     name: string = 'Add Connection';
 
     constructor(ctx: EditorContext,
-                readonly fromNode: NodePath,
+                readonly fromNode: EditorPath,
                 readonly output: number,
-                readonly toNode: NodePath,
+                readonly toNode: EditorPath,
                 readonly input: number) {
         super(ctx);
 
@@ -175,9 +175,9 @@ export class RemoveConnectionCommand extends EditorCommand {
     name: string = 'Add Connection';
 
     constructor(ctx: EditorContext,
-                readonly fromNode: NodePath,
+                readonly fromNode: EditorPath,
                 readonly output: number,
-                readonly toNode: NodePath,
+                readonly toNode: EditorPath,
                 readonly input: number) {
         super(ctx);
     }
@@ -202,7 +202,7 @@ export class RemoveConnectionCommand extends EditorCommand {
 export class LayoutNodesCommand extends ProducingEditorCommand {
     name = 'Layout Nodes';
 
-    constructor(ctx: EditorContext, readonly parent: NodePath, readonly names: string[]) {
+    constructor(ctx: EditorContext, readonly parent: EditorPath, readonly names: string[]) {
         super(ctx);
     }
 
@@ -250,7 +250,7 @@ export class LayoutNodesCommand extends ProducingEditorCommand {
         );
     }
 
-    layoutNode(node: Node, x: number, y: number, nodes: Node[], commands: [NodePath, Vec2][]) {
+    layoutNode(node: Node, x: number, y: number, nodes: Node[], commands: [EditorPath, Vec2][]) {
         let {width, layout, childCount} = this.getTreeWidth(node, nodes)
 
         const children = new Set<Node>()
@@ -293,7 +293,7 @@ export class LayoutNodesCommand extends ProducingEditorCommand {
         let curX = Math.min(...rootNodes.map(it => it.position.value.x))
         let curY = Math.max(...rootNodes.map(it => it.position.value.y))
 
-        const positions: [NodePath, Vec2][] = []
+        const positions: [EditorPath, Vec2][] = []
 
         animateNodePosition(() => rootNodes.forEach((node, index) => {
             const {width, layout} = this.getTreeWidth(node, nodes)

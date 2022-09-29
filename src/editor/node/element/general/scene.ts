@@ -10,7 +10,6 @@ export class SceneNode extends NodeSystem<ElementNode> {
 
     nodeType = 'element'
 
-
     constructor(ctx: EditorContext, name: string = 'Scene') {
         super(ctx, name);
     }

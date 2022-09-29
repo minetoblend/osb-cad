@@ -2,7 +2,8 @@ import {RegisterNode} from "@/editor/node/registry";
 import {SimulationNode} from "@/editor/node/element/particle/simulation";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {NodeBuilder} from "@/editor/node";
-import {Vec2} from "@/util/math";
+import {AttributeType} from "@/editor/objects/attribute";
+import {SBCollection} from "@/editor/objects/collection";
 
 
 @RegisterNode('ParticleSolver', ['fas', 'server'], 'simulation', 'simulation')
@@ -15,16 +16,16 @@ export class ParticleSolverNode extends SimulationNode {
             .outputs(1)
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-        const geo = ctx.getInput()
+    cook(ctx: CookContext): CookResult {
+        const geo = ctx.fetchInput() as SBCollection
+
 
         if (!geo.hasAttribute('force'))
-            geo.addAttribute('force', 'vec2')
+            geo.addAttribute('force', AttributeType.Vec2)
         if (!geo.hasAttribute('vel'))
-            geo.addAttribute('vel', 'vec2')
+            geo.addAttribute('vel', AttributeType.Vec2)
 
-        const delta = ctx.DELTA / 250
-
+        //const delta = ctx.DELTA / 250
 
         geo.filter((index) => {
             const lifetime = geo.getAttribute<number>('lifetime', index)
@@ -33,18 +34,17 @@ export class ParticleSolverNode extends SimulationNode {
                 geo.setAttribute('age', index, age)
             return age < lifetime
         })
+        /*
+                geo.forEach((index, el) => {
+                    const vel = geo.getAttribute<Vec2>('vel', index)
+                    const force = geo.getAttribute<Vec2>('force', index)
 
-
-        geo.forEach((index, el) => {
-            const vel = geo.getAttribute<Vec2>('vel', index)
-            const force = geo.getAttribute<Vec2>('force', index)
-
-            el._pos = el._pos.add(vel.mulF(delta));
-            geo.setAttribute('vel', index, vel.add(
-                force.mulF(delta)
-            ))
-            geo.setAttribute('force', index, Vec2.zero());
-        })
+                    el._pos = el._pos.add(vel.mulF(delta));
+                    geo.setAttribute('vel', index, vel.add(
+                        force.mulF(delta)
+                    ))
+                    geo.setAttribute('force', index, Vec2.zero());
+                })*/
 
         return CookResult.success(geo)
     }

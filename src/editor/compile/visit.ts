@@ -143,6 +143,6 @@ export function createExpressionVisitor(withIndex: boolean, attributes: Set<stri
 export function createCodeBlockVisitor(attributes: Set<string>, dependencies: Set<NodeDependencyType>, builtinMethods: Set<string>): Visitor {
     return {
         Identifier: path => visitIdentifier(path, true, true, dependencies, attributes),
-        CallExpression: path => visitCallExpression(path, builtinMethods)
+        CallExpression: path => visitCallExpression(path, builtinMethods),
     }
 }

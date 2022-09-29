@@ -3,7 +3,7 @@ import {CookContext, CookError, CookResult, CookResultType} from "@/editor/node/
 import {NodeSystem} from "@/editor/node/system";
 import {Node, NodeBuilder, TimingInformation} from "@/editor/node";
 import {Deserializer, SerializedNodeSystem} from "@/editor/ctx/serialize";
-import {LastFrameNode, SimulationInputNode} from "@/editor/node/element/particle/input";
+import {InputNode} from "@/editor/node/element/general/input";
 import {SimulationNode} from "@/editor/node/element/particle/simulation";
 import {NullNode} from "@/editor/node/element";
 import {Vec2} from "@/util/math";
@@ -12,6 +12,7 @@ import {NodeDependencyType} from "@/editor/compile";
 import {MarkDirtyReason} from "@/editor/node/markDirty";
 import {NodeDependency} from "@/editor/node/dependency";
 import {animationFrameAsPromise} from "@/util/promise";
+import {LastFrameNode} from "@/editor/node/element/particle/input";
 
 @RegisterNode('ParticleSystem', ['fas', 'explosion'], 'objects')
 export class ParticleSystem extends NodeSystem<SimulationNode> {
@@ -49,7 +50,7 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
             this.add(lastFrameNode)
 
             for (let i = 0; i < 4; i++) {
-                const inputNode = new SimulationInputNode(this.ctx, 'Input' + i)
+                const inputNode = new InputNode(this.ctx, 'Input' + i)
                 inputNode.position.value.x = i * 200 + 200
                 inputNode.param('input')!.set(i)
 
@@ -111,8 +112,6 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
             if (performance.now() - this.lastUpdate > 50)
                 await animationFrameAsPromise()
 
-            console.log('cooking frame ' + time)
-
             const dependency = new NodeDependency(outputNode, 0, 0, true)
             dependency.time = time
             dependency.delta = time - lastTime
@@ -121,6 +120,7 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
             this.lastUpdate = performance.now()
             const result = await this.cookNode(dependency, lastFrame)
             if (result.type !== CookResultType.Success) {
+                onFinish();
                 return CookResult.failure([], [...result.errors, ...result.upstreamErrors])
             }
 
@@ -158,8 +158,8 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
             let ctx: CookContext;
 
             if (node instanceof LastFrameNode) {
-                ctx = new CookContext(this.ctx, [], dependency, () => new SBCollection())
-                ctx.input[0] = [lastFame.geometry]
+                ctx = new CookContext(this.ctx, node, [], dependency)
+                ctx.inputGeometry[0] = lastFame.geometry
             } else {
                 const dependencies = node!.findDependenciesForCooking()
                 dependencies.forEach(it => it.assignFromDownstream(dependency))
@@ -177,13 +177,14 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
                     ))
                     result = CookResult.failure([], upstreamErrors)
                     dependency.result = result
+
                     return result;
                 }
-                ctx = new CookContext(this.ctx, dependencies, dependency, () => new SBCollection())
+                ctx = new CookContext(this.ctx, node, dependencies, dependency)
 
             }
+            result = await node.cookWithStatistics(ctx)
 
-            result = await node.cook(ctx)
             dependency.result = result
         } catch (e) {
             result = CookResult.failure([new CookError(node, (e as Error).message)])

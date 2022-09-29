@@ -3,11 +3,19 @@
     <div class="viewport-container" ref="viewportContainer">
       <div class="viewport-overlay">
         <div class="command-stats">
-          <div>
-            fps: {{ ctx.fps }}
+          <div style="display: flex">
+            <div style="width: 100px">
+              fps: {{ ctx.fps }}
+            </div>
+
+            delta: {{ Math.floor(ctx.updateTimes[0] * 10) / 10 }}ms
           </div>
           <div>
-            Command count: {{ statistics.commandCount }}
+            Command count: {{ statistics.commandCount }} ({{ statistics.visibleSprites / statistics.commandCount }}
+            Commands / sprite)
+          </div>
+          <div>
+            Sprite count: {{ statistics.visibleSprites }}
           </div>
           <template v-if="statistics.spritesWithOverlappingCommandCount">
             <div>
@@ -96,9 +104,9 @@ watchEffect(() => {
 
   ctx.updateTimes.forEach((delta, i) => {
     if (i === 0) {
-      fpsGraph.moveTo(150, 100 - delta)
+      fpsGraph.moveTo(80, 0 - delta)
     } else {
-      fpsGraph.lineTo(150 + i * 5, 100 - delta)
+      fpsGraph.lineTo(80 + i * 5, 0 - delta)
     }
   })
   renderer.render(stage)

@@ -3,6 +3,7 @@ import {SimulationNode} from "@/editor/node/element/particle/simulation";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
 import {Vec2} from "@/util/math";
 import {NodeBuilder} from "@/editor/node";
+import {AttributeType} from "@/editor/objects/attribute";
 
 
 @RegisterNode('Gravity', ['fas', 'arrows-down-to-line'], 'simulation', 'simulation')
@@ -18,13 +19,13 @@ export class GravityNode extends SimulationNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    cook(ctx: CookContext): CookResult {
         const geo = ctx.getInput()
 
         const attributeName = 'force'
 
         if (!geo.hasAttribute(attributeName)) {
-            geo.addAttribute(attributeName, 'vec2')
+            geo.addAttribute(attributeName, AttributeType.Vec2)
         }
 
         const attribute = geo.getAttributeContainer<Vec2>(attributeName)!

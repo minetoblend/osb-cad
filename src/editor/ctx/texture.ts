@@ -56,7 +56,6 @@ export class FileStore {
                 const content = await electronAPI.readTextFile(filepath)
                 const beatmap = await parser.parseContent(content);
                 this.beatmaps.value.push(beatmap)
-                console.log(beatmap)
             }
         }))
     }

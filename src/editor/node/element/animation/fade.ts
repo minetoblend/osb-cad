@@ -28,8 +28,7 @@ export class FadeNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         const geo = ctx.getInput()
 
         const startTime = this.param('startTime')!
@@ -88,8 +87,7 @@ export class FadeInOutNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         const geo = ctx.getInput()
 
         const startTime = this.param('startTime')!

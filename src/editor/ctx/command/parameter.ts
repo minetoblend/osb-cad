@@ -1,6 +1,6 @@
 import {EditorCommand} from "@/editor/ctx/editorCommand";
 import {EditorContext} from "@/editor/ctx/context";
-import {NodePath} from "@/editor/node/path";
+import {EditorPath} from "@/editor/node/path";
 
 
 export class SetNodeParameterCommand extends EditorCommand {
@@ -8,7 +8,7 @@ export class SetNodeParameterCommand extends EditorCommand {
     name = 'Set node parameter';
 
 
-    constructor(ctx: EditorContext, readonly path: NodePath, readonly param: string, readonly value: any, readonly originalValue?: any) {
+    constructor(ctx: EditorContext, readonly path: EditorPath, readonly param: string, readonly value: any, readonly originalValue?: any) {
         super(ctx);
     }
 

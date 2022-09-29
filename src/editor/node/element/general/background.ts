@@ -25,7 +25,7 @@ export class BackgroundNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    cook(ctx: CookContext): CookResult {
         const collection = new SBCollection()
         const spriteName = this.getParam<string>('sprite')
 

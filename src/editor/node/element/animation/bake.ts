@@ -34,7 +34,9 @@ export class BakeAnimationNode extends ElementNode {
 
         const sampleTimes: number[] = []
         for (let time = startTime; time < endTime + interval; time += interval) {
-            sampleTimes.push(Math.min(time, endTime))
+            sampleTimes.push(
+                Math.floor(Math.min(time, endTime))
+            )
         }
         return sampleTimes
     }
@@ -45,9 +47,10 @@ export class BakeAnimationNode extends ElementNode {
         if (sampleTimes.length === 0)
             return CookResult.success(new SBCollection())
 
-        const geos = sampleTimes.map(time => ctx.getInput(0, time))
+        const geos = sampleTimes.map(time => ctx.fetch(`frame:${time}`)[0]) as SBCollection[]
         const geo = geos.shift()!
 
+        console.log(ctx)
 
         let lastTime = sampleTimes[0]
         let lastGeo = geo
@@ -126,7 +129,7 @@ export class BakeAnimationNode extends ElementNode {
             dependenciesAtTime.forEach(it => {
                 it.time = time
                 it.dirty = true
-                it.key = time
+                it.key = `frame:${time}`
             })
 
             dependencies.push(...dependenciesAtTime)

@@ -18,8 +18,7 @@ export class NullNode extends ElementNode {
             .outputs(1)
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         return CookResult.success(
             ctx.getInput()
         );

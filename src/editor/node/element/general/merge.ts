@@ -19,10 +19,8 @@ export class MergeNode extends ElementNode {
             .output('output')
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         const geos = ctx.getInputMultiple()
-
         const geo = geos.shift() ?? new SBCollection()
 
         geos.forEach(it => geo.append(it))

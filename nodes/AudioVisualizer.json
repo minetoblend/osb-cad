@@ -1,0 +1,19 @@
+{
+  "name": "AudioVisualizer",
+  "icon": [
+    "fas",
+    "headphones"
+  ],
+  "nodes": [
+  ],
+  "connections": [
+  ],
+  "parameters": [
+  ],
+  "inputs": [],
+  "outputs": [
+    {
+      "name": "Output0"
+    }
+  ]
+}

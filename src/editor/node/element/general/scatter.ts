@@ -21,18 +21,14 @@ export class ScatterNode extends ElementNode {
         builder
             .outputs(1)
             .parameters(param => param
-                    .vec2('centre', 'Centre', {defaultValue: Vec2.playfieldCentre()})
-                    .vec2('size', 'Size', {defaultValue: new Vec2(100, 100)})
-                    .int('amount', 'Amount', {defaultValue: 20})
-                    .int('seed', 'Seed')
-
-                //.sprite('sprite', 'Sprite')
-                //.vec2('spriteScale', 'Sprite Scale', {defaultValue: Vec2.one()})
+                .vec2('centre', 'Centre', {defaultValue: Vec2.playfieldCentre()})
+                .vec2('size', 'Size', {defaultValue: new Vec2(100, 100)})
+                .int('amount', 'Amount', {defaultValue: 20})
+                .int('seed', 'Seed')
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         const geo = new SBCollection()
 
         const centre = this.chv2('centre')

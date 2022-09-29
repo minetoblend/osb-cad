@@ -6,6 +6,7 @@ import {NodeBuilder} from "@/editor/node";
 import {EditorContext} from "@/editor/ctx/context";
 import {WorkerMessage} from "@/editor/node/element/import/worker.message";
 import {NodeDependencyType} from "@/editor/compile";
+import {AttributeType} from "@/editor/objects/attribute";
 
 
 @RegisterNode('AudioSpectrum', ['fas', 'headphones'], 'import')
@@ -75,9 +76,8 @@ export class AudioSpectrumNode extends ElementNode {
 
         geo.grow(spectrum.length)
 
-        const frequencyAttr = geo.addAttribute('frequency', 'number')
-        const amplitudeAttr = geo.addAttribute('amplitude', 'number')
-
+        const frequencyAttr = geo.addAttribute('frequency', AttributeType.Float)
+        const amplitudeAttr = geo.addAttribute('amplitude', AttributeType.Float)
 
 
         spectrum.forEach((value, index) => {

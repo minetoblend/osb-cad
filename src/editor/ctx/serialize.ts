@@ -19,6 +19,8 @@ import {
 } from '@/editor/node/element'
 import {EditorContext} from "@/editor/ctx/context";
 import {NodeRegistry} from "@/editor/node/registry";
+import {NodeSystem} from "@/editor/node/system";
+import {NodeInput, NodeOutput} from "@/editor/node/input";
 
 export interface SerializedProject {
     mapsetPath: string
@@ -39,9 +41,9 @@ export interface SerializedNode {
     name: string
     position: Vec2Like
     parameters: SerializedNodeParam[]
-
-    inputs?: any
-    outputs?: any
+    icon: string[]
+    inputs?: { name: string, multiple: boolean }[]
+    outputs?: { name: string }[]
 }
 
 export interface SerializedNodeSystem extends SerializedNode {
@@ -93,7 +95,7 @@ export class Deserializer {
     ]
 
 
-    deserializeNode(ctx: EditorContext, serialized: Partial<SerializedNode>, type: string): ElementNode | null {
+    deserializeNode(ctx: EditorContext, serialized: Partial<SerializedNode>, type: string, parent?: NodeSystem<any>): ElementNode | null {
         if (!serialized.type)
             return null
 
@@ -105,6 +107,24 @@ export class Deserializer {
                 node.name.value = serialized.name ?? metadata.label
                 if (serialized.position)
                     node.position.value = new Vec2(serialized.position.x, serialized.position.y)
+
+                if (parent) {
+                    node.name.value = parent.getAvailableName(node.name.value)
+                    node.parent = parent
+                }
+
+                if (serialized.icon)
+                    node.icon = serialized.icon
+
+                if (serialized.inputs) {
+                    node.inputs = serialized.inputs.map(({name, multiple}, index) =>
+                        new NodeInput(node, name, index, multiple))
+                }
+
+                if (serialized.outputs) {
+                    node.outputs = serialized.outputs.map(({name}, index) => new NodeOutput(node, name, index))
+
+                }
 
                 node.initFromData(serialized, this)
 

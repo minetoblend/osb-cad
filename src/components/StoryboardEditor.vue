@@ -28,7 +28,7 @@
           </splitpanes>
         </pane>
         <pane size="20" min-size="5">
-          <timeline-view/>
+          <timeline-view v-if="true"/>
         </pane>
       </splitpanes>
     </shortcut-receiver>

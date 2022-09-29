@@ -21,7 +21,7 @@ export class OffsetNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    cook(ctx: CookContext): CookResult {
 
         const geo = ctx.getInput()
 

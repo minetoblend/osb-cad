@@ -30,7 +30,8 @@ const createWindow = () => {
 }
 
 app.whenReady().then(async () => {
-    //await session.defaultSession.loadExtension(path.join(__dirname, 'vue-devtools'))
+    if (fs.existsSync(path.join(__dirname, 'vue-devtools')))
+        await session.defaultSession.loadExtension(path.join(__dirname, 'vue-devtools'))
     createWindow()
 })
 

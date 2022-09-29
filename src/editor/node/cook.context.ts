@@ -1,36 +1,38 @@
 import {Node} from "@/editor/node/index";
 import {SBCollection} from "@/editor/objects/collection";
-import {GlobalValues} from "@/editor/compile";
+import {globalFunctions, GlobalValues} from "@/editor/compile";
 import {NodeDependency} from "@/editor/node/dependency";
 import {EditorContext} from "@/editor/ctx/context";
 import {Vec2} from "@/util/math";
+import {EditorPath} from "@/editor/node/path";
 
 export class CookContext implements GlobalValues {
 
-    readonly input: any[][] = []
+    readonly fetchedGeometry: Record<string, any[]>
+    readonly inputGeometry: any[] = []
 
-    constructor(ctx: EditorContext, dependencies: NodeDependency[], dependency: NodeDependency, defaultValue: () => any) {
-        const input: any = []
+    constructor(readonly ctx: EditorContext, readonly node: Node, dependencies: NodeDependency[], dependency: NodeDependency) {
+        const input: Record<string, any[]> = {}
 
-        dependencies.forEach((d) => {
-            if (!input[d.input]) {
-                input[d.input] = []
-            }
-            if (dependency.node && dependency.node.inputs[d.input]?.multiple) {
+        dependencies.forEach(dependency => {
+            const key = dependency.key ?? 'default'
 
-                input[d.input]!.push(d.result!.outputData[d.output])
-            } else {
-                input[d.input][d.key] = d.result!.outputData[d.output]
+
+            const result = dependency.result!.outputData[dependency.output]?.clone()
+
+            if (!result)
+                console.log(dependency)
+
+            const inputs = input[key] ?? []
+            inputs.push(result)
+            input[key] = inputs
+
+            if (dependency.input !== undefined) {
+                this.inputGeometry[dependency.input] = result
             }
         })
 
-        if (dependency.node)
-            dependency.node.inputs.forEach(it => {
-                if (input[it.index] === undefined)
-                    input[it.index] = [defaultValue()]
-            })
-
-        this.input = input
+        this.fetchedGeometry = input
 
         this.TIME = dependency?.time ?? ctx.time.value
         this.DELTA = dependency.delta ?? 0
@@ -39,17 +41,17 @@ export class CookContext implements GlobalValues {
     TIME: number
     DELTA: number
 
-    getInput<T = SBCollection>(index: number = 0, key: number = 0): T {
-        const value = this.input[index][key]
+    getInput<T = SBCollection>(index: number = 0): T {
+        const value = this.inputGeometry[index]
         if (value && value.clone) {
             return value.clone() as T
         }
         return value as T
     }
 
-    getInputs<T = SBCollection>(key: number = 0): T[] {
-        return this.input.map(it => {
-            const value = it[key]
+    getInputs<T = SBCollection>(key: string = 'default'): T[] {
+        return this.fetchedGeometry[key].map(it => {
+            const value = it
             if (value && value.clone) {
                 return value.clone() as T
             }
@@ -58,10 +60,26 @@ export class CookContext implements GlobalValues {
     }
 
     getInputMultiple<T = SBCollection>(index: number = 0): T[] {
-        return this.input[index].map((it, key) => this.getInput<T>(index, key))
+        return this.getInputs(this.node.inputs[index].name)
     }
 
     CENTRE = Vec2.playfieldCentre()
+
+    get(path: string | EditorPath) {
+        if (typeof path === "string")
+            path = this.node.path.resolve(path)
+        return path.find(this.ctx)
+    }
+
+    fetch(key: string = 'default') {
+        return this.fetchedGeometry[key]
+    }
+
+    fetchInput(index = 0) {
+        return this.inputGeometry[index]
+    }
+
+    readonly functions = globalFunctions
 }
 
 export class CookResult {
@@ -89,6 +107,8 @@ export class CookResult {
         result.upstreamErrors.push(...upstreamErrors)
         return result
     }
+
+    duration = 0
 }
 
 export enum CookResultType {

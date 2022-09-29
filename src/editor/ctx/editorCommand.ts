@@ -1,4 +1,4 @@
-import {NodePath} from "@/editor/node/path";
+import {EditorPath} from "@/editor/node/path";
 import {EditorContext} from "@/editor/ctx/context";
 import {Vec2} from "@/util/math";
 import {animateNodePosition} from "@/util/flags";
@@ -49,7 +49,7 @@ export class MoveNodesCommand extends EditorCommand {
 
     constructor(
         ctx: EditorContext,
-        readonly nodes: NodePath[],
+        readonly nodes: EditorPath[],
         readonly to: Vec2[],
         from?: Vec2[]) {
         super(ctx);

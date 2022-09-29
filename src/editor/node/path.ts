@@ -1,5 +1,10 @@
-export class NodePath {
-    constructor(readonly parts: string[]) {
+import {EditorObject} from "@/editor/ctx/editorObject";
+
+export class EditorPath {
+    readonly parts: ReadonlyArray<string>
+
+    constructor(parts: string[]) {
+        this.parts = Object.freeze(parts)
     }
 
     get length() {
@@ -15,11 +20,11 @@ export class NodePath {
     }
 
     shift() {
-        return new NodePath(this.parts.slice(1))
+        return new EditorPath(this.parts.slice(1))
     }
 
     child(value: string) {
-        return new NodePath([
+        return new EditorPath([
             ...this.parts,
             value
         ]);
@@ -30,7 +35,7 @@ export class NodePath {
     }
 
     replace(name: string) {
-        return new NodePath([
+        return new EditorPath([
             ...this.parts.slice(0, this.parts.length - 1),
             name
         ]);
@@ -40,17 +45,17 @@ export class NodePath {
         return this.parts.length > 0
     }
 
-    get parent(): NodePath | undefined {
+    get parent(): EditorPath | undefined {
         if (this.hasParent)
-            return new NodePath(this.parts.slice(0, this.parts.length - 1))
+            return new EditorPath(this.parts.slice(0, this.parts.length - 1))
         return undefined
     }
 
-    get parentPaths(): NodePath[] {
+    get parentPaths(): EditorPath[] {
         if (this.parts.length === 0)
             return []
 
-        const paths: NodePath[] = []
+        const paths: EditorPath[] = []
         if (this.hasParent)
             paths.push(...this.parent!.parentPaths)
 
@@ -60,11 +65,62 @@ export class NodePath {
     }
 
     static root() {
-        return new NodePath([]);
+        return new EditorPath([]);
     }
 
 
     static fromString(activePath: string) {
-        return new NodePath(activePath.split('/').filter(it => it.trim().length > 0));
+        return new EditorPath(activePath.split('/').filter(it => it.trim().length > 0));
+    }
+
+    resolve(relative: string) {
+        if (relative.startsWith('/'))
+            return EditorPath.fromString(relative)
+
+        const parts: string[] = [...this.parts]
+
+        const relativeParts = relative.split('/')
+
+        relativeParts.forEach((part) => {
+            if (part === '.') {
+                return; //current node
+            } else if (part === '..') {
+                parts.pop(); //go back one node
+            } else {
+                parts.push(part)
+            }
+        })
+
+        return new EditorPath(parts);
+    }
+
+    get isRelative() {
+        return ['.', '..'].includes(this.parts[0])
+    }
+
+    split(): [string, EditorPath | undefined] {
+        const [child, ...remaining] = this.parts
+        return [child, remaining.length ? new EditorPath(remaining) : undefined]
+    }
+
+    find(root: EditorObject) {
+        const parts = [...this.parts]
+        let curObj = root
+        while (parts.length > 0) {
+            const pathElement = parts.shift()!
+            let nextObj: EditorObject | undefined;
+            if (pathElement === '..') {
+                nextObj = curObj.getParent()
+            } else if (pathElement === '.') {
+                nextObj = curObj
+            } else {
+                nextObj = curObj.getChild(pathElement)
+            }
+            if (!nextObj) {
+                throw Error('Not found')
+            }
+            curObj = nextObj
+        }
+        return curObj
     }
 }

@@ -6,6 +6,7 @@ import {NodeDependencyType} from "@/editor/compile";
 import {Vec2} from "@/util/math";
 import {Origin} from "@/editor/objects/origin";
 import {RegisterNode} from "@/editor/node/registry";
+import {AttributeType} from "@/editor/objects/attribute";
 
 @RegisterNode('HitObjects', ['fas', 'dorchadas'], 'import')
 export class HitObjectsNode extends ElementNode {
@@ -21,8 +22,7 @@ export class HitObjectsNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         const geo = new SBCollection()
 
         const beatmap = this.ctx.currentBeatmapObject.value
@@ -32,41 +32,38 @@ export class HitObjectsNode extends ElementNode {
         const timingAttributeName = this.param('timingAttribute')!.get()
         const sliderEnds = !!this.param('sliderEnds')!.get()
         const sliderRepeats = !!this.param('sliderRepeats')!.get()
+        geo.addAttribute(timingAttributeName, AttributeType.Float);
 
-        geo.addAttribute(timingAttributeName, 'number');
+        beatmap.hitObjects.forEach(hitObject => {
+            const playfieldOffset = new Vec2(60, 55)
+            const startPosition = new Vec2(hitObject.position[0], hitObject.position[1]).add(playfieldOffset)
 
-        if (beatmap) {
-            beatmap.hitObjects.forEach(hitObject => {
-                const playfieldOffset = new Vec2(60, 55)
-                const startPosition = new Vec2(hitObject.position[0], hitObject.position[1]).add(playfieldOffset)
+            if (hitObject.objectName === "circle" || hitObject.objectName === 'slider') {
+                const {index} = geo.addSprite(
+                    startPosition,
+                    Origin.Centre,
+                )
+                geo.setAttribute(timingAttributeName, index, hitObject.startTime)
+            }
+            if (hitObject.objectName === 'slider') {
+                const endPosition = new Vec2(hitObject.endPosition![0], hitObject.endPosition![1]).add(playfieldOffset)
+                const repeatCount = hitObject.repeatCount!
+                const repeatDuration = hitObject.duration! / hitObject.repeatCount!
+                for (let i = 0; i < repeatCount; i++) {
+                    if (i < repeatCount - 1 && !sliderRepeats)
+                        continue;
+                    if (i === repeatCount - 1 && !sliderEnds)
+                        continue;
 
-                if (hitObject.objectName === "circle" || hitObject.objectName === 'slider') {
+                    const pos = i % 2 === 0 ? endPosition : startPosition;
                     const {index} = geo.addSprite(
-                        startPosition,
+                        pos,
                         Origin.Centre,
                     )
-                    geo.setAttribute(timingAttributeName, index, hitObject.startTime)
+                    geo.setAttribute(timingAttributeName, index, hitObject.startTime + repeatDuration * (i + 1))
                 }
-                if (hitObject.objectName === 'slider') {
-                    const endPosition = new Vec2(hitObject.endPosition![0], hitObject.endPosition![1]).add(playfieldOffset)
-                    const repeatCount = hitObject.repeatCount!
-                    const repeatDuration = hitObject.duration! / hitObject.repeatCount!
-                    for (let i = 0; i < repeatCount; i++) {
-                        if (i < repeatCount - 1 && !sliderRepeats)
-                            continue;
-                        if (i === repeatCount - 1 && !sliderEnds)
-                            continue;
-
-                        const pos = i % 2 === 0 ? endPosition : startPosition;
-                        const {index} = geo.addSprite(
-                            pos,
-                            Origin.Centre,
-                        )
-                        geo.setAttribute(timingAttributeName, index, hitObject.startTime + repeatDuration * (i + 1))
-                    }
-                }
-            })
-        }
+            }
+        })
 
         return CookResult.success(geo);
     }

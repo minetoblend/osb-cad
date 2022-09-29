@@ -266,7 +266,6 @@ function handleShortcut(evt: CustomEvent) {
         )
       break;
     case 'l':
-      console.log('layout nodes')
       if (nodeSystem.value.selectedNodes.length) {
         ctx.executeCommand(new LayoutNodesCommand(ctx, nodeSystem.value.path, nodeSystem.value.selectedNodes.map(it => it.name.value)))
       } else {

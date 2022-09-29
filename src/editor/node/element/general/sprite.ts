@@ -27,7 +27,7 @@ export class SpriteNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    cook(ctx: CookContext): CookResult {
         const collection = new SBCollection()
         const spriteName = this.getParam<string>('sprite')
         const spriteId = this.ctx.fileStore.getTextureId(spriteName)

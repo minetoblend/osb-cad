@@ -1,13 +1,27 @@
 import * as parser from '@babel/parser'
 import traverse from '@babel/traverse'
 import generate from "@babel/generator";
-import {createCodeBlockVisitor, createExpressionVisitor} from "@/editor/compile/visit";
+import * as babel from '@babel/core'
+import {createExpressionVisitor} from "@/editor/compile/visit";
 import {lerp, Vec2, Vec2Like} from "@/util/math";
 import {SBElement} from "@/editor/objects";
-import {SBCollection} from "@/editor/objects/collection";
-import {createStatementBaseContext, createStatementContext} from "@/editor/compile/ctx";
 import Prando from "prando";
+import {AnalyzeVisitor} from "@/editor/compile/analyze";
+import {Compiler} from "@/editor/compile/compiler";
+import {EditorPath} from "@/editor/node/path";
+import {EditorContext} from "@/editor/ctx/context";
 
+//@ts-ignore
+import presetEnv from '@babel/preset-env'
+//@ts-ignore
+import transformModulesUmd from '@babel/plugin-transform-modules-umd'
+import {CookContext} from "@/editor/node/cook.context";
+import {WrangleModule} from "@/editor/compile/module";
+import {CompilerError} from "@/editor/compile/error";
+//@ts-ignore
+const fileClass = babel.File as Constructor<any>
+
+declare var globalThis: any;
 
 export const globalFunctions: GlobalFunctions = {
     cos: Math.cos,
@@ -81,29 +95,51 @@ export const builtinStatementMethods = new Set<string>([
     'setAttrib',
 ])
 
-export function compileStatements(code: string) {
+export function compileStatements(code: string, path: EditorPath, ctx: EditorContext) {
     const attributes = new Set<string>()
     const dependencies = new Set<NodeDependencyType>()
 
-    code = '(ctx, el, idx) => {\n' + code.trim() + '\n}'
-
     const ast = parser.parse(code, {
-        sourceFilename: 'code.js'
+        sourceFilename: 'code.js',
+        sourceType: 'module',
     })
 
-    traverse(ast, {
-        ...createCodeBlockVisitor(attributes, dependencies, builtinStatementMethods),
-    })
 
-    const transformedCode = generate(ast, {
-        sourceMaps: true
+    const file = new fileClass({filename: 'osbcad://runner.js'}, {code, ast})
+
+    const analyzer = new AnalyzeVisitor(ctx, path)
+    traverse(ast, analyzer.visitor, file.scope)
+
+    const compiler = new Compiler(analyzer)
+    traverse(ast, compiler.visitor, file.scope)
+
+    const compiledCode = generate(ast, {
+        sourceMaps: true,
     }, {
         'code.js': code
     })
-    console.log(transformedCode.map)
-    console.log(transformedCode.code)
-    const compiledFunction = eval(transformedCode.code)
-    return new CompiledCodeBlock(compiledFunction, attributes, dependencies)
+
+    const moduleName = path.toString().replace(/\//g, '_')
+
+    const compiledModule = babel.transformSync(compiledCode.code, {
+        presets: [presetEnv],
+        sourceType: 'module',
+        filename: moduleName,
+        plugins: [transformModulesUmd],
+        sourceFileName: moduleName,
+    })!
+
+    console.log(compiledModule.code)
+
+    eval(compiledModule.code!)
+
+    const module = globalThis[moduleName]
+
+    if (module) {
+        return new CompiledCodeBlock(module, code, attributes, dependencies, analyzer.errors)
+    }
+
+    throw new Error('Could not build module')
 }
 
 
@@ -138,18 +174,18 @@ export const Globals = new Set<string>(
 );
 
 export class CompiledCodeBlock {
-    constructor(readonly expression: (ctx: any, el: SBElement, idx: number) => any, readonly attributes: Set<string>, readonly dependencies: Set<NodeDependencyType>) {
-        console.log(expression)
+    constructor(
+        readonly module: WrangleModule,
+        readonly source: string,
+        readonly attributes: Set<string>,
+        readonly dependencies: Set<NodeDependencyType>,
+        readonly errors: CompilerError[]
+    ) {
     }
 
-    run(globals: GlobalValues, inputs: SBCollection[]) {
-        const baseCtx = createStatementBaseContext(globals)
-        inputs[0]?.forEach((idx, el) => {
-            const ctx = createStatementContext(baseCtx, inputs)
-            this.expression(ctx, el, idx)
-        })
+    run(ctx: CookContext) {
+        return this.module.entry(ctx)
     }
-
 }
 
 export class CompiledExpression {
@@ -183,7 +219,6 @@ export class CompiledExpression {
             ...globalFunctions
         }
 
-        //console.log(combinedCtx)
 
         if (idx === undefined) {
             return this.expression(combinedCtx, el, -1)

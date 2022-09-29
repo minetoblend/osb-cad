@@ -26,14 +26,11 @@ export class ColorNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-
+    cook(ctx: CookContext): CookResult {
         const geo = ctx.getInput()
 
         const startTime = this.param('startTime')!
         const endTime = this.param('endTime')!
-        //const startColor = this.param('startColor')!
-        //const endColor = this.param('endColor')!
 
         geo.forEach((idx, el) => {
 

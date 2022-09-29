@@ -48,7 +48,7 @@
 <script setup lang="ts">
 
 import {useContext} from "@/editor/ctx/use";
-import {NodePath} from "@/editor/node/path";
+import {EditorPath} from "@/editor/node/path";
 import {computed, h} from 'vue'
 import {ElDivider} from "element-plus";
 import {LayoutNodesCommand} from "@/editor/ctx/command/node";
@@ -56,7 +56,7 @@ import {NodeRegistry} from "@/editor/node/registry";
 
 const ctx = useContext()
 const nodesSystem = computed(() => ctx.activeNodeSystem.value)
-const rootPath = NodePath.root()
+const rootPath = EditorPath.root()
 
 const spacer = h(ElDivider, {direction: 'vertical'})
 

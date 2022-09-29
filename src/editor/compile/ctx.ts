@@ -1,5 +1,6 @@
 import {SBCollection} from "@/editor/objects/collection";
 import {GlobalFunctions, globalFunctions, GlobalValues} from "@/editor/compile/index";
+import {AttributeType} from "@/editor/objects/attribute";
 
 
 export function createStatementBaseContext(globals: GlobalValues): StatementBaseContext {
@@ -12,11 +13,11 @@ export function createStatementBaseContext(globals: GlobalValues): StatementBase
 export function createStatementContext(baseCtx: StatementBaseContext, inputs: SBCollection[]): StatementContext {
     const ctx = baseCtx as StatementContext
 
-    ctx.getAttrib = (geo: number, index: number, name: string, type?: 'number' | 'vec2') => {
+    ctx.getAttrib = (geo: number, index: number, name: string, type?: AttributeType) => {
         return inputs[geo]?.getAttribute(name, index, type)
     }
 
-    ctx.setAttrib = (geo: number, index: number, name: string, value: any, type?: 'number' | 'vec2') => {
+    ctx.setAttrib = (geo: number, index: number, name: string, value: any, type?: AttributeType) => {
         return inputs[geo]?.setAttribute(name, index, value, type)
     }
 

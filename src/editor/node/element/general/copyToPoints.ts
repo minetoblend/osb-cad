@@ -5,6 +5,7 @@ import {SBCollection} from "@/editor/objects/collection";
 import {NodeBuilder} from "@/editor/node";
 import {RegisterNode} from "@/editor/node/registry";
 import {Vec2} from "@/util/math";
+import {AttributeType} from "@/editor/objects/attribute";
 
 @RegisterNode('CopyToPoints', ['fas', 'clone'], 'general')
 export class CopyToPointsNode extends ElementNode {
@@ -26,7 +27,7 @@ export class CopyToPointsNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    cook(ctx: CookContext): CookResult {
         const geo = new SBCollection();
 
         const geoToCopy = ctx.getInput()
@@ -40,7 +41,7 @@ export class CopyToPointsNode extends ElementNode {
         pointsToCopyTo.forEach((index, el) => {
             const copy = geoToCopy.clone()
             if (useTiming)
-                copy.addAttribute(timingAttributeName, 'number')
+                copy.addAttribute(timingAttributeName, AttributeType.Float)
 
             copy.forEach((index1, el1) => {
                 let pos = el._pos

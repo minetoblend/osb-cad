@@ -1,7 +1,7 @@
 import {Node} from "@/editor/node";
 
 import {NodeSystem} from "@/editor/node/system";
-import {NodePath} from "@/editor/node/path";
+import {EditorPath} from "@/editor/node/path";
 import {EditorCommand} from "@/editor/ctx/editorCommand";
 import {CommandHistory} from "@/editor/ctx/history";
 import {CookTask} from "@/editor/node/cook";
@@ -19,8 +19,11 @@ import {addRecentFile} from "@/editor/files";
 import {EditorClock} from "@/editor/ctx/clock";
 import {AudioEngine} from "@/editor/audio";
 import * as path from "path";
+import {useDevtools} from "@/devtools";
+import {CustomInspectorNode} from "@vue/devtools-api";
+import {EditorObject} from "@/editor/ctx/editorObject";
 
-export class EditorContext {
+export class EditorContext implements EditorObject {
 
     readonly history = new CommandHistory(this)
     readonly activeNode = shallowRef<Node>()
@@ -28,7 +31,7 @@ export class EditorContext {
     readonly currentGeometry = shallowRef<SBCollection>()
     readonly mapsetPath = ref<string>('')
     readonly fileStore = new FileStore()
-    readonly activePath = shallowRef(NodePath.root())
+    readonly activePath = shallowRef(EditorPath.root())
     readonly duration = ref(10_000)
     readonly projectFilepath = ref<string>()
     readonly activeNodeSystem = computed(() => this.getObject(this.activePath.value) as NodeSystem<any>)
@@ -65,6 +68,8 @@ export class EditorContext {
             }
         })
         requestAnimationFrame(() => this.update())
+
+        this.setupDevtools()
     }
 
     readonly lastUpdate = ref(performance.now())
@@ -97,9 +102,9 @@ export class EditorContext {
         })
     }
 
-    getObject(path: string | string[] | NodePath): Node | null {
+    getObject(path: string | string[] | EditorPath): Node | null {
         if (typeof path === "string") path = path.split('/')
-        if (Array.isArray(path)) path = new NodePath(path)
+        if (Array.isArray(path)) path = new EditorPath(path)
 
         return this.root.value.find(path)
     }
@@ -180,7 +185,7 @@ export class EditorContext {
         }
 
         if (project.activePath) {
-            const path = NodePath.fromString(project.activePath)
+            const path = EditorPath.fromString(project.activePath)
             if (this.getObject(path))
                 this.activePath.value = path
         }
@@ -203,5 +208,58 @@ export class EditorContext {
 
     destroy() {
 
+    }
+
+    private setupDevtools() {
+        const devtools = useDevtools()
+
+        if (devtools) {
+            devtools.on.getInspectorTree((payload) => {
+                if (payload.inspectorId === 'nodes') {
+                    payload.rootNodes = [this.createInspectorNode(this.root.value)]
+                }
+            })
+        }
+    }
+
+    private createInspectorNode(node: Node): CustomInspectorNode {
+
+        const res: CustomInspectorNode = {
+            id: node.path.toString(),
+            label: node.name.value,
+        }
+
+        if (node instanceof NodeSystem) {
+            res.children = [...node.nodeList].map(it => this.createInspectorNode(it))
+        }
+
+        if (node.cookDuration) {
+            res.tags = [
+                {
+                    label: (Math.floor(node.cookDuration * 10) / 10) + 'ms',
+                    textColor: 0xffffff,
+                    backgroundColor: 0x000000
+                },
+                {
+                    label: (Math.floor(node.ownCookDuration * 10) / 10) + 'ms',
+                    textColor: 0xffffff,
+                    backgroundColor: 0x000000
+                }
+            ]
+        }
+
+        return res
+    }
+
+    getChild(name: string): EditorObject | undefined {
+        return this.root.value.getChild(name)
+    }
+
+    getParent(): EditorObject | undefined {
+        return undefined
+    }
+
+    canEvaluate(): boolean {
+        return false
     }
 }

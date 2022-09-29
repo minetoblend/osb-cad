@@ -1,10 +1,9 @@
 import {Node} from "@/editor/node/index";
 import {NodeConnection} from "@/editor/node/connection";
-import {NodePath} from "@/editor/node/path";
+import {EditorPath} from "@/editor/node/path";
 import {ref, shallowReactive, watch, WatchStopHandle} from "vue";
 import {EditorContext} from "@/editor/ctx/context";
 import {CookContext, CookResult} from "@/editor/node/cook.context";
-import {SBCollection} from "@/editor/objects/collection";
 import {NodeDependencyType} from "@/editor/compile";
 import {endsWithNumber, getNumberAtEnd} from "@/util/string";
 import type {Deserializer, SerializedNodeSystem} from "@/editor/ctx/serialize";
@@ -49,17 +48,12 @@ export abstract class NodeSystem<N extends Node> extends Node {
     }
 
     async cook(ctx: CookContext): Promise<CookResult> {
-        if (this.outputNode.value) {
-            const node = this.getNode(this.outputNode.value)
-            const output = node?.getOutput(0)
-            if (output) {
-                return CookResult.success(output)
-            }
-        }
-        return CookResult.success(new SBCollection());
+        const output = ctx.fetch('output')
+
+        return CookResult.success(output[0]);
     }
 
-    find(path: NodePath): Node | null {
+    find(path: EditorPath): Node | null {
         if (path.length === 0)
             return this
 
@@ -202,7 +196,9 @@ export abstract class NodeSystem<N extends Node> extends Node {
 
         if (this.outputNode.value) {
             const outputNode = this.getNode(this.outputNode.value) as Node
-            dependencies.push(new NodeDependency(outputNode, 0, 0))
+            dependencies.push(new NodeDependency(outputNode, 0, 0, false, 'output'))
+        } else {
+            dependencies.push(NodeDependency.empty(undefined, 'output'))
         }
 
         return dependencies;
@@ -275,7 +271,7 @@ export abstract class NodeSystem<N extends Node> extends Node {
         super.initFromData(data, deserializer);
 
         data.nodes?.forEach(serializedNode => {
-            const node = deserializer.deserializeNode(this.ctx, serializedNode, this.nodeType) as N
+            const node = deserializer.deserializeNode(this.ctx, serializedNode, this.nodeType, this) as N
             if (node) {
                 this.add(node)
             }
@@ -303,5 +299,17 @@ export abstract class NodeSystem<N extends Node> extends Node {
 
     get nodeNames(): IterableIterator<string> {
         return this.nodes.keys()
+    }
+
+    resetStats() {
+        this.nodes.forEach(it => it.resetStats())
+    }
+
+    getChild(name: string): any {
+        return super.getChild(name) ?? this.nodes.get(name);
+    }
+
+    canEvaluate(): boolean {
+        return false
     }
 }
