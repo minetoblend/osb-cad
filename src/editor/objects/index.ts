@@ -255,14 +255,14 @@ export class SBElement {
     }
 
     offsetAnimation(amount: number) {
-        this.moveTimeline.addOffset(amount)
-        this.moveXTimeline.addOffset(amount)
-        this.moveYTimeline.addOffset(amount)
-        this.scaleTimeline.addOffset(amount)
-        this.scaleVecTimeline.addOffset(amount)
-        this.rotateTimeline.addOffset(amount)
-        this.fadeTimeline.addOffset(amount)
-        this.colorTimeline.addOffset(amount)
+        this._moveTimeline?.addOffset(amount)
+        this._moveXTimeline?.addOffset(amount)
+        this._moveYTimeline?.addOffset(amount)
+        this._scaleTimeline?.addOffset(amount)
+        this._scaleVecTimeline?.addOffset(amount)
+        this._rotateTimeline?.addOffset(amount)
+        this._fadeTimeline?.addOffset(amount)
+        this._colorTimeline?.addOffset(amount)
     }
 
     applyAnimationFrom(el: SBElement) {

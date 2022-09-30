@@ -116,6 +116,8 @@ export class CookJobContext {
         if (node instanceof NodeInput) {
             if (node.connections.length > 0) {
                 const childCtx = this.createChildContext(node.connections[0].from.node.path)
+                path.query.forEach((value, key) => childCtx.path.withQuery(key, value))
+
                 return this.manager.cookWithContext(childCtx)
             } else {
                 return CookResult.success(new SBCollection())
