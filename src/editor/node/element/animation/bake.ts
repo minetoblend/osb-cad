@@ -99,6 +99,18 @@ export class BakeAnimationNode extends ElementNode {
                     })
                 }
 
+
+                if (sprite._alpha !== lastSprite._alpha) {
+                    bakedSprite.fade({
+                        startTime: lastTime,
+                        endTime: time,
+                        startAlpha: lastSprite._alpha,
+                        endAlpha: sprite._alpha,
+                        easing: Easing.Linear
+                    })
+                }
+
+
                 if (!bakedSprite.hasNoAnimation && !geo.getSprite(spriteIndex)) {
                     geo.addElement(bakedSprite)
                 }
