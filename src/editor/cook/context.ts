@@ -23,8 +23,6 @@ export class CookManager {
         }
 
         if (ctx.node.cook) {
-            ctx.addDependencies(ctx.node.dependencies)
-
             let result = ctx.node.cook(ctx);
             if (result instanceof Promise)
                 result = await result
@@ -37,9 +35,7 @@ export class CookManager {
                 if (ctx.isStatic) {
                     result.cached = true
                 }
-                if (ctx.usedQuery.has('time')) {
-                    ctx.node.dependencies.add(NodeDependencyType.Time)
-                }
+                ctx.node.dependencies = new Set(ctx.dependencies.type)
             }
 
             ctx.node.cache.addResult(result)
@@ -98,7 +94,6 @@ export class CookJobContext {
     readonly node: Node
 
     private readonly chain: Set<Node>
-    private readonly dependencies = new Set<NodeDependencyType>()
     private readonly provided = new Map<string, any>()
 
     private createChildContext(path: EditorPath) {
@@ -148,11 +143,6 @@ export class CookJobContext {
             return new SBCollection()
     }
 
-    addDependencies(dependencies: Set<NodeDependencyType>) {
-        dependencies.forEach(dependency => this.dependencies.add(dependency))
-        this.parent?.addDependencies(dependencies)
-    }
-
     provide(name: string, value: any) {
         this.provided.set(name, value)
     }
@@ -163,11 +153,21 @@ export class CookJobContext {
 
     // builtin global values
 
-    usedQuery = new Set<string>()
+    dependencies = {
+        query: new Set<string>(),
+        type: new Set<NodeDependencyType>()
+    }
 
     private markQueryValueUsed(name: string) {
-        this.usedQuery.add(name)
+        this.dependencies.query.add(name)
+        if (name === 'time')
+            this.dependencies.type.add(NodeDependencyType.Time)
         this.parent?.markQueryValueUsed(name)
+    }
+
+    private markNodeDependencyTypeUsed(type: NodeDependencyType) {
+        this.dependencies.type.add(type)
+        this.parent?.markNodeDependencyTypeUsed(type)
     }
 
     getQueryValue(name: string): string | undefined {
@@ -187,6 +187,11 @@ export class CookJobContext {
     readonly functions = globalFunctions
 
     get isStatic(): boolean {
-        return this.usedQuery.size === 0;
+        return this.dependencies.query.size === 0;
+    }
+
+    getTextureId(spriteName: string) {
+        this.markNodeDependencyTypeUsed(NodeDependencyType.Texture)
+        return this.ctx.fileStore.getTextureId(spriteName)
     }
 }

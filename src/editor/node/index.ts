@@ -31,8 +31,8 @@ export abstract class Node implements IHasPosition, EditorObject {
     parent?: NodeSystem<any>
     inputs: NodeInput[] = []
     outputs: NodeOutput[] = []
-    readonly interface: NodeInterfaceItem[] = []
-    readonly dependencies = new Set<NodeDependencyType>()
+    interface: NodeInterfaceItem[] = []
+    dependencies = new Set<NodeDependencyType>()
 
     cache = new NodeCache()
 

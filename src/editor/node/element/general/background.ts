@@ -30,7 +30,7 @@ export class BackgroundNode extends ElementNode {
         const collection = new SBCollection()
         const spriteName = this.getParam<string>('sprite')
 
-        const spriteId = this.ctx.fileStore.getTextureId(spriteName)
+        const spriteId = ctx.getTextureId(spriteName)
         const texture = this.ctx.fileStore.textures[spriteId]?.texture
 
         let scale = 1
