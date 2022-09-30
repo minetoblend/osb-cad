@@ -30,6 +30,18 @@ export class SpriteWrangleNode extends ElementNode {
 
         const {compiledCode} = codeParam
 
+
+        if (!compiledCode) {
+            try {
+                codeParam.compile()
+            } catch (e) {
+                console.error(e)
+                return CookResult.failure([
+                    new CookError(this, (e as any).message ?? 'Could not run wrangle')
+                ])
+            }
+        }
+
         if (compiledCode) {
             if (compiledCode.errors.length > 0) {
                 console.log(compiledCode.errors)
@@ -39,7 +51,10 @@ export class SpriteWrangleNode extends ElementNode {
             }
 
             try {
-                const result = await compiledCode.run(ctx)
+
+                const prefetched = [await ctx.fetchInput()]
+
+                const result = await compiledCode.run(ctx, prefetched)
 
                 if (result instanceof SBCollection)
                     return CookResult.success(result)

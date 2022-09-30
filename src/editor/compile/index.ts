@@ -18,6 +18,7 @@ import transformModulesUmd from '@babel/plugin-transform-modules-umd'
 import {WrangleModule} from "@/editor/compile/module";
 import {CompilerError} from "@/editor/compile/error";
 import {CookJobContext} from "@/editor/cook/context";
+import {SBCollection} from "@/editor/objects/collection";
 //@ts-ignore
 const fileClass = babel.File as Constructor<any>
 
@@ -191,8 +192,8 @@ export class CompiledCodeBlock {
     ) {
     }
 
-    run(ctx: CookJobContext) {
-        return this.module.entry(ctx)
+    run(ctx: CookJobContext, prefetched: SBCollection[]) {
+        return this.module.entry(ctx, prefetched)
     }
 }
 

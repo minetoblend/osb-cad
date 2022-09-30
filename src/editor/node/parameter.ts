@@ -262,10 +262,14 @@ export class CodeNodeParameter extends NodeParameter {
 
     compiledCode?: CompiledCodeBlock
 
-    set(value: any) {
-        this.compiledCode = compileStatements(value, this.node.path, this.node.ctx)
+    compile() {
+        this.compiledCode = compileStatements(this.value.value, this.node.path, this.node.ctx)
+    }
 
+    set(value: any) {
         super.set(value);
+
+        this.compile()
     }
 
     getDependencies(): NodeDependencyType[] {

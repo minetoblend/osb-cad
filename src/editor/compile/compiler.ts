@@ -18,10 +18,10 @@ export class Compiler {
         this.accessedGlobals = analyzer.accessedGlobals
     }
 
-    static entryTemplate = template.program('export async function entry (%%ctx%%) { %%body%% }')
+    static entryTemplate = template.program('export async function entry (%%ctx%%, %%prefetched%%) { %%body%% }')
     static getAttributeContainerTemplate = template.expression('%%geo%%.getOrCreateAttributeContainer(%%attributeName%%, %%attributeType%%)')
     static getQueryTemplate = template.expression('%%ctx%%.getQueryValue(%%name%%)')
-    static fetchInputTemplate = template.expression('await %%ctx%%.fetchInput()')
+    static fetchInputTemplate = template.expression('%%prefetched%%[%%index%%]')
     static loopTemplate = template.statements('for (var %%idx%% = 0; %%idx%% < %%geo%%.length; %%idx%%++) { %%body%% }')
     static getElementTemplate = template.expression('%%geo%%.el(%%idx%%)')
     static evaluateContextPathTemplate = template.expression('%%ctx%%.get(%%path%%)')
@@ -30,6 +30,7 @@ export class Compiler {
     private defaultGeoIdentifier!: Identifier
     private idxIdentifier!: Identifier
     private currentElementIdentifier!: Identifier
+    private prefetchedIdentifier!: Identifier
 
     get globalFunctions() {
         return globalFunctions
@@ -65,7 +66,10 @@ export class Compiler {
 
         statements.push(
             types.variableDeclaration('const', [
-                types.variableDeclarator(this.defaultGeoIdentifier!, Compiler.fetchInputTemplate({ctx: this.ctxIdentifier}))
+                types.variableDeclarator(this.defaultGeoIdentifier!, Compiler.fetchInputTemplate({
+                    prefetched: this.prefetchedIdentifier,
+                    index: types.numericLiteral(0)
+                }))
             ])
         )
 
@@ -104,8 +108,13 @@ export class Compiler {
         const {body} = path.node
 
         this.ctxIdentifier = path.scope.generateUidIdentifier('ctx')
+        this.prefetchedIdentifier = path.scope.generateUidIdentifier('prefetched')
 
-        const ast = Compiler.entryTemplate({ctx: this.ctxIdentifier, body})
+        const ast = Compiler.entryTemplate({
+            ctx: this.ctxIdentifier,
+            prefetched: this.prefetchedIdentifier,
+            body
+        })
 
         const [newPath] = path.replaceWith(ast)
         newPath.setData('transformed', true)
