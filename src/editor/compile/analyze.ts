@@ -208,6 +208,7 @@ const builtinAttributes: Record<string, AttributeType> = {
     pos: AttributeType.Vec2,
     scale: AttributeType.Vec2,
     rotation: AttributeType.Float,
+    alpha: AttributeType.Float,
     origin: AttributeType.Int,
     sprite: AttributeType.Int,
 }
