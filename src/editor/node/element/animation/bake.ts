@@ -1,12 +1,14 @@
 import {RegisterNode} from "@/editor/node/registry";
 import {ElementNode} from "@/editor/node/element";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {Node, NodeBuilder, TimingInformation} from "@/editor/node";
 import {NodeDependency} from "@/editor/node/dependency";
 import {SBCollection} from "@/editor/objects/collection";
 import {Easing} from "@/editor/objects/easing";
 import {MarkDirtyReason} from "@/editor/node/markDirty";
 import {NodeDependencyType} from "@/editor/compile";
+import {CookJobContext} from "@/editor/cook/context";
+import {EditorPath} from "@/editor/node/path";
 
 @RegisterNode('BakeAnimation', ['fas', 'bread-slice'], 'animation')
 export class BakeAnimationNode extends ElementNode {
@@ -41,16 +43,16 @@ export class BakeAnimationNode extends ElementNode {
         return sampleTimes
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
         const sampleTimes = this.getSampleTimes()
 
         if (sampleTimes.length === 0)
             return CookResult.success(new SBCollection())
 
-        const geos = sampleTimes.map(time => ctx.fetch(`frame:${time}`)[0]) as SBCollection[]
+        const geos = await Promise.all(sampleTimes.map(time => ctx.fetch(
+            EditorPath.fromObject(this.inputs[0]).withQuery('time', time)
+        )))
         const geo = geos.shift()!
-
-        console.log(ctx)
 
         let lastTime = sampleTimes[0]
         let lastGeo = geo
@@ -127,10 +129,11 @@ export class BakeAnimationNode extends ElementNode {
             const dependenciesAtTime = super.findDependenciesForCooking(new Set(visited));
 
             dependenciesAtTime.forEach(it => {
-                it.time = time
                 it.dirty = true
                 it.key = `frame:${time}`
+                it.setQuery({time})
             })
+
 
             dependencies.push(...dependenciesAtTime)
         }

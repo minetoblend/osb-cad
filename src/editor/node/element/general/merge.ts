@@ -1,9 +1,10 @@
 import {ElementNode} from "@/editor/node/element";
 import {NodeBuilder} from "@/editor/node";
 import {EditorContext} from "@/editor/ctx/context";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {RegisterNode} from "@/editor/node/registry";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Merge', ['fas', 'down-left-and-up-right-to-center'], 'general')
 export class MergeNode extends ElementNode {
@@ -19,8 +20,11 @@ export class MergeNode extends ElementNode {
             .output('output')
     }
 
-    cook(ctx: CookContext): CookResult {
-        const geos = ctx.getInputMultiple()
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        const geos = await Promise.all(this.inputs[0].connections.map(connection =>
+            ctx.fetch(connection.from.node.path, connection.from.index)
+        ))
+
         const geo = geos.shift() ?? new SBCollection()
 
         geos.forEach(it => geo.append(it))

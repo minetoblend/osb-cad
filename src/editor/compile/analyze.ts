@@ -11,8 +11,8 @@ export class AnalyzeVisitor {
     }
 
     readonly attributes = new Map<string, AttributeMetadata>()
+    readonly accessedGlobals = new Set<string>()
     readonly errors: CompilerError[] = []
-
     readonly staticContextAccess = new Map<string, ContextAccess>()
 
     addAttribute(path: NodePath, name: string, type?: AttributeType) {
@@ -104,6 +104,14 @@ export class AnalyzeVisitor {
 
             if (node.name === 'idx') {
                 path.setData('isIdx', true)
+            }
+
+            if (node.name.startsWith('_')) {
+                const name = node.name.substring(1)
+                if (name.toLowerCase() === name) {
+                    path.setData('isGlobal', true)
+                    this.accessedGlobals.add(name)
+                }
             }
         },
         CallExpression: path => {

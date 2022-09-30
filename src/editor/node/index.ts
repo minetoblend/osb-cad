@@ -7,7 +7,7 @@ import type {NodeSystem} from "@/editor/node/system";
 import {NodeInterfaceBuilder, NodeInterfaceItem} from "@/editor/node/interface";
 import {EditorContext} from "@/editor/ctx/context";
 import {CircularDependencyError, NodeError} from "@/editor/node/error";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {NodeDependencyType} from "@/editor/compile";
 import type {SerializedNode} from "@/editor/ctx/serialize";
 import {Deserializer} from "@/editor/ctx/serialize";
@@ -15,8 +15,11 @@ import {NodeInput, NodeOutput} from "@/editor/node/input";
 import {DragOptions} from "@/util/event";
 import {NodeDependency} from "@/editor/node/dependency";
 import {MarkDirtyReason} from "@/editor/node/markDirty";
+import {EditorObject} from "@/editor/ctx/editorObject";
+import {CookJobContext} from "@/editor/cook/context";
+import {NodeCache} from "@/editor/cook/cache";
 
-export abstract class Node implements IHasPosition {
+export abstract class Node implements IHasPosition, EditorObject {
     abstract icon: string[]
     readonly name: Ref<string>
     readonly position = ref(Vec2.zero())
@@ -29,8 +32,9 @@ export abstract class Node implements IHasPosition {
     inputs: NodeInput[] = []
     outputs: NodeOutput[] = []
     readonly interface: NodeInterfaceItem[] = []
-    protected readonly dependencies = new Set<NodeDependencyType>()
-    resultCache: any[] | null = null
+    readonly dependencies = new Set<NodeDependencyType>()
+
+    cache = new NodeCache()
 
     constructor(readonly ctx: EditorContext, name: string) {
         this.name = ref(name)
@@ -74,37 +78,15 @@ export abstract class Node implements IHasPosition {
     cookDuration: number = 0
     ownCookDuration: number = 0
 
-    cookWithStatistics(ctx: CookContext): CookResult | Promise<CookResult> {
-        const startTime = performance.now()
-        const result = this.cook(ctx)
-        if (result instanceof Promise) {
-            return result.then(result => {
-                result.duration = performance.now() - startTime
-                this.ownCookDuration += result.duration
-                this.cookDuration += result.duration
-                return result
-            })
-        }
+    // region cook
 
-        this.ownCookDuration += result.duration
-        this.cookDuration += result.duration
-        return result
-    }
+    abstract cook(ctx: CookJobContext): CookResult | Promise<CookResult>
 
-    resetStats() {
-        this.cookDuration = 0
-        this.ownCookDuration = 0
-    }
+    passThrough?(path: EditorPath): EditorPath | undefined
 
-    abstract cook(ctx: CookContext): CookResult | Promise<CookResult>
+    //endregion
 
     define?(builder: NodeBuilder): void
-
-    getOutput(index: number): any {
-        if (!this.resultCache)
-            return undefined
-        return this.resultCache[index]
-    }
 
     updateDependencies() {
         this.dependencies.clear()
@@ -196,15 +178,18 @@ export abstract class Node implements IHasPosition {
     }
 
     destroy() {
-        console.log(`${this.path} destroyed`)
     }
 
     findDependencies() {
         return this.parent?.getConnectionsLeadingTo(this).map(it => it.from.node) ?? []
     }
 
-    hasDependency(...dependency: NodeDependencyType[]) {
-        return dependency.some(d => this.dependencies.has(d))
+    hasDependency(dependency: NodeDependencyType, downstream: boolean = false) {
+        if (downstream) {
+            this.findDependenciesForCooking()
+        }
+
+        return this.dependencies.has(dependency)
     }
 
     chv2(name: string, ctx?: GetWithElementContext): Vec2 {
@@ -292,6 +277,10 @@ export abstract class Node implements IHasPosition {
     }
 
     getChild(name: string) {
+        if (name.startsWith(':input')) {
+            const index = parseInt(name.substring(':input'.length))
+            return this.inputs[index]
+        }
         return this.params.get(name)
     }
 
@@ -301,6 +290,22 @@ export abstract class Node implements IHasPosition {
 
     canEvaluate(): boolean {
         return false
+    }
+
+    getDependenciesDeep(): Set<NodeDependencyType> {
+        const dependencies = new Set(this.dependencies);
+
+        const d = this.findDependenciesForCooking()
+
+        d.forEach(it => {
+            it.dependencies.forEach(dependency => dependencies.add(dependency))
+        })
+
+        return dependencies
+    }
+
+    getName(): string {
+        return this.name.value
     }
 }
 

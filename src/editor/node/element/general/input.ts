@@ -1,8 +1,10 @@
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookError, CookResult} from "@/editor/node/cook.context";
 import {Node, NodeBuilder} from "@/editor/node";
 import {RegisterNode} from "@/editor/node/registry";
 import {ElementNode} from "@/editor/node/element";
 import {NodeDependency} from "@/editor/node/dependency";
+import {CookJobContext} from "@/editor/cook/context";
+import {EditorPath} from "@/editor/node/path";
 
 @RegisterNode('Input', ['fas', 'right-to-bracket'], 'general', 'element')
 export class InputNode extends ElementNode {
@@ -17,8 +19,15 @@ export class InputNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
-        return CookResult.success(ctx.inputGeometry[0])
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        if (!this.parent)
+            return CookResult.failure([new CookError(this, 'No Parent')])
+
+        const input = this.param('input')!.get()
+
+        const res = await ctx.fetch(EditorPath.fromObject(this.parent!.inputs[input]))
+
+        return CookResult.success(res)
     }
 
     findDependenciesForCooking(visited: Set<Node> = new Set<Node>()): NodeDependency[] {
@@ -29,6 +38,7 @@ export class InputNode extends ElementNode {
         const inputIndex = this.param('input')!.get()
 
         const input = parent.inputs[inputIndex]
+
         if (input && input.connections.length > 0) {
             const connection = input.connections[0]
             return [

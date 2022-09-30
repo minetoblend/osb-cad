@@ -37,7 +37,7 @@
         </el-breadcrumb-item>
         <el-breadcrumb-item v-for="subPath in ctx.activePath.value.parentPaths" :key="subPath.toString()"
                             @click="ctx.activePath.value = subPath">
-          {{ subPath.leaf }}
+          {{ subPath.end }}
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>

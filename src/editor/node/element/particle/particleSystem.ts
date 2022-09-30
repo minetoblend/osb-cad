@@ -1,5 +1,5 @@
 import {RegisterNode} from "@/editor/node/registry";
-import {CookContext, CookError, CookResult, CookResultType} from "@/editor/node/cook.context";
+import {CookResult, CookResultType} from "@/editor/node/cook.context";
 import {NodeSystem} from "@/editor/node/system";
 import {Node, NodeBuilder, TimingInformation} from "@/editor/node";
 import {Deserializer, SerializedNodeSystem} from "@/editor/ctx/serialize";
@@ -13,6 +13,7 @@ import {MarkDirtyReason} from "@/editor/node/markDirty";
 import {NodeDependency} from "@/editor/node/dependency";
 import {animationFrameAsPromise} from "@/util/promise";
 import {LastFrameNode} from "@/editor/node/element/particle/input";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('ParticleSystem', ['fas', 'explosion'], 'objects')
 export class ParticleSystem extends NodeSystem<SimulationNode> {
@@ -38,8 +39,9 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
 
     markDirty(reason?: MarkDirtyReason, visited: Set<Node> = new Set<Node>()): void {
         super.markDirty(reason, visited);
-        if (reason?.expressionDependency !== NodeDependencyType.Time)
+        if (reason?.expressionDependency !== NodeDependencyType.Time) {
             this.simulationDirty = true
+        }
     }
 
     initFromData(data: Partial<SerializedNodeSystem>, deserializer: Deserializer) {
@@ -71,7 +73,7 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
 
     cooking?: Promise<void>
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
         if (this.cooking)
             await this.cooking;
 
@@ -79,17 +81,16 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
         const endTime = this.param('endTime')!.get()
         const interval = this.param('interval')!.get()
 
-        if (ctx.TIME < startTime || ctx.TIME > endTime)
+        if (ctx.time < startTime || ctx.time > endTime)
             return CookResult.success(new SBCollection())
 
         if (!this.simulationDirty) {
-            let {index, found} = this.findCacheIndex(ctx.TIME)
+            let {index, found} = this.findCacheIndex(ctx.time)
             if (!found)
                 index--
 
             return CookResult.success(this.simulationCache[index].geometry)
         }
-
 
         if (!this.outputNode.value)
             return CookResult.success(new SBCollection())
@@ -102,23 +103,21 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
         this.cooking = new Promise(resolve => onFinish = resolve)
         await animationFrameAsPromise()
 
+        console.log('resimulating particle system')
 
         let lastTime = startTime
         for (let time = startTime; time < endTime + interval; time += interval) {
             time = Math.min(time, endTime)
 
-            const lastFrame = simulation[simulation.length - 1] ?? new SimulationCachedFrame(time - interval, new SBCollection())
+            const lastFrame = simulation[simulation.length - 1]?.geometry ?? new SBCollection()
 
-            if (performance.now() - this.lastUpdate > 50)
-                await animationFrameAsPromise()
+            ctx.provide('lastFrame', lastFrame)
 
-            const dependency = new NodeDependency(outputNode, 0, 0, true)
-            dependency.time = time
-            dependency.delta = time - lastTime
+            const result = await ctx.fetchResult(outputNode.path
+                .withQuery('time', time)
+                .withQuery('delta', time - lastTime)
+            )
 
-
-            this.lastUpdate = performance.now()
-            const result = await this.cookNode(dependency, lastFrame)
             if (result.type !== CookResultType.Success) {
                 onFinish();
                 return CookResult.failure([], [...result.errors, ...result.upstreamErrors])
@@ -131,8 +130,7 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
         this.simulationDirty = false
         this.simulationCache = simulation
 
-
-        let {index, found} = this.findCacheIndex(ctx.TIME)
+        let {index, found} = this.findCacheIndex(ctx.time)
         if (!found)
             index--
 
@@ -140,58 +138,6 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
         onFinish();
 
         return CookResult.success(this.simulationCache[index].geometry)
-    }
-
-    lastUpdate = performance.now()
-
-    private async cookNode(dependency: NodeDependency, lastFame: SimulationCachedFrame): Promise<CookResult> {
-        const node = dependency.node!
-        let result = CookResult.failure()
-
-        if (performance.now() - this.lastUpdate > 50) {
-            console.log('wait')
-            await animationFrameAsPromise()
-            this.lastUpdate = performance.now()
-        }
-
-        try {
-            let ctx: CookContext;
-
-            if (node instanceof LastFrameNode) {
-                ctx = new CookContext(this.ctx, node, [], dependency)
-                ctx.inputGeometry[0] = lastFame.geometry
-            } else {
-                const dependencies = node!.findDependenciesForCooking()
-                dependencies.forEach(it => it.assignFromDownstream(dependency))
-
-                await Promise.all(dependencies.filter(it => it.node).map(dependency => this.cookNode(dependency, lastFame)))
-
-                const failedDependencies = dependencies.filter(it => it.result && it.result.type === CookResultType.Failure)
-                if (failedDependencies.length > 0) {
-                    const upstreamErrors: CookError[] = []
-                    failedDependencies.forEach(it => upstreamErrors.push(
-                        ...it.result?.errors ?? []
-                    ))
-                    failedDependencies.forEach(it => upstreamErrors.push(
-                        ...it.result?.upstreamErrors ?? []
-                    ))
-                    result = CookResult.failure([], upstreamErrors)
-                    dependency.result = result
-
-                    return result;
-                }
-                ctx = new CookContext(this.ctx, node, dependencies, dependency)
-
-            }
-            result = await node.cookWithStatistics(ctx)
-
-            dependency.result = result
-        } catch (e) {
-            result = CookResult.failure([new CookError(node, (e as Error).message)])
-            console.error(e)
-        }
-
-        return result
     }
 
     private findCacheIndex(time: number): { found: boolean, index: number } {

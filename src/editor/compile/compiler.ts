@@ -8,17 +8,20 @@ export class Compiler {
     private attributes: Map<string, AttributeMetadata>;
     private attributeIdentifiers = new Map<string, Identifier>()
     private contextAccessIdentifiers = new Map<string, Identifier>()
+    private globalsIdentifiers = new Map<string, Identifier>()
     private staticContextAccess: Map<string, ContextAccess>;
+    private accessedGlobals: Set<string>;
 
     constructor(analyzer: AnalyzeVisitor) {
         this.attributes = analyzer.attributes
         this.staticContextAccess = analyzer.staticContextAccess
-        console.log(this.attributes)
+        this.accessedGlobals = analyzer.accessedGlobals
     }
 
-    static entryTemplate = template.program('export function entry (%%ctx%%) { %%body%% }')
+    static entryTemplate = template.program('export async function entry (%%ctx%%) { %%body%% }')
     static getAttributeContainerTemplate = template.expression('%%geo%%.getOrCreateAttributeContainer(%%attributeName%%, %%attributeType%%)')
-    static fetchInputTemplate = template.expression('%%ctx%%.fetchInput()')
+    static getQueryTemplate = template.expression('%%ctx%%.getQueryValue(%%name%%)')
+    static fetchInputTemplate = template.expression('await %%ctx%%.fetchInput()')
     static loopTemplate = template.statements('for (var %%idx%% = 0; %%idx%% < %%geo%%.length; %%idx%%++) { %%body%% }')
     static getElementTemplate = template.expression('%%geo%%.el(%%idx%%)')
     static evaluateContextPathTemplate = template.expression('%%ctx%%.get(%%path%%)')
@@ -41,6 +44,17 @@ export class Compiler {
             geo: this.defaultGeoIdentifier,
             attributeName: types.stringLiteral(attribute.name),
             attributeType: attribute.type ? types.stringLiteral(attribute.type) : undefined
+        }))
+    }
+
+    buildGlobalDeclarator(path: NodePath, name: string) {
+        const identifier = path.scope.generateUidIdentifier(name)
+
+        this.globalsIdentifiers.set(name, identifier)
+
+        return types.variableDeclarator(identifier, Compiler.getQueryTemplate({
+            ctx: this.ctxIdentifier,
+            name: types.stringLiteral(name),
         }))
     }
 
@@ -67,15 +81,18 @@ export class Compiler {
         const contextAccess = [...this.staticContextAccess.entries()]
         if (contextAccess.length > 0)
             statements.push(
-                types.variableDeclaration('const', contextAccess.map(([nodePath]) => {
-                    const identifier = path.scope.generateUidIdentifier(nodePath.toString())
-                    this.contextAccessIdentifiers.set(nodePath, identifier)
+                types.variableDeclaration('const', contextAccess.map(([editorPath]) => {
+                    const identifier = path.scope.generateUidIdentifier(editorPath.toString())
+                    this.contextAccessIdentifiers.set(editorPath, identifier)
                     return types.variableDeclarator(identifier, Compiler.evaluateContextPathTemplate({
                         ctx: this.ctxIdentifier,
-                        path: types.stringLiteral(nodePath)
+                        path: types.stringLiteral(editorPath)
                     }))
                 }))
             )
+
+        if (this.accessedGlobals.size > 0)
+            statements.push(types.variableDeclaration('const', [...this.accessedGlobals].map(name => this.buildGlobalDeclarator(path, name))))
 
         return statements
     }
@@ -152,10 +169,14 @@ export class Compiler {
                 } else {
                     this.buildAttributeRead(path, attribute)
                 }
-            }
-            if (path.getData('isIdx')) {
+            } else if (path.getData('isIdx')) {
                 path.setData('isIdx', false)
                 path.replaceWith(this.idxIdentifier)
+            } else if (path.getData('isGlobal')) {
+                path.setData('isGlobal', false)
+                path.replaceWith(
+                    this.globalsIdentifiers.get(path.node.name.substring(1))!
+                )
             }
         },
         CallExpression: path => {

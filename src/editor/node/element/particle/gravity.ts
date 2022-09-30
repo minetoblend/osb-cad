@@ -1,9 +1,10 @@
 import {RegisterNode} from "@/editor/node/registry";
 import {SimulationNode} from "@/editor/node/element/particle/simulation";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {Vec2} from "@/util/math";
 import {NodeBuilder} from "@/editor/node";
 import {AttributeType} from "@/editor/objects/attribute";
+import {CookJobContext} from "@/editor/cook/context";
 
 
 @RegisterNode('Gravity', ['fas', 'arrows-down-to-line'], 'simulation', 'simulation')
@@ -19,8 +20,8 @@ export class GravityNode extends SimulationNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
-        const geo = ctx.getInput()
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        const geo = await ctx.fetchInput()
 
         const attributeName = 'force'
 
@@ -39,7 +40,6 @@ export class GravityNode extends SimulationNode {
                         xParam.getWithElement({idx, el, geo: [geo], ...ctx}),
                         yParam.getWithElement({idx, el, geo: [geo], ...ctx})
                     ))
-                    .mulF(ctx.DELTA)
             )
         })
 

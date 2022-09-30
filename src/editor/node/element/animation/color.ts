@@ -1,10 +1,11 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {NodeBuilder} from "@/editor/node";
 import {Easing} from "@/editor/objects/easing";
 import {Color} from "@/util/math";
 import {RegisterNode} from "@/editor/node/registry";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Color', ['fas', 'brush'], 'commands')
 export class ColorNode extends ElementNode {
@@ -26,8 +27,8 @@ export class ColorNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
-        const geo = ctx.getInput()
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        const geo = await ctx.fetchInput()
 
         const startTime = this.param('startTime')!
         const endTime = this.param('endTime')!

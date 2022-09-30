@@ -1,12 +1,13 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
 import {NodeBuilder} from "@/editor/node";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {Origin} from "@/editor/objects/origin";
 import {Vec2} from "@/util/math";
 import {NodeDependencyType} from "@/editor/compile";
 import {RegisterNode} from "@/editor/node/registry";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Background', ['fas', 'panorama'], 'objects')
 export class BackgroundNode extends ElementNode {
@@ -25,7 +26,7 @@ export class BackgroundNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
+    cook(ctx: CookJobContext): CookResult {
         const collection = new SBCollection()
         const spriteName = this.getParam<string>('sprite')
 
@@ -37,6 +38,8 @@ export class BackgroundNode extends ElementNode {
             scale = Math.max(640 / texture.width, 480 / texture.height)
 
         scale *= this.param('scale')!.get()
+
+        console.log(scale)
 
         collection.addSprite(
             Vec2.playfieldCentre(),

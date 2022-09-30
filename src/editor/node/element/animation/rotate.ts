@@ -1,9 +1,10 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {NodeBuilder} from "@/editor/node";
 import {Easing} from "@/editor/objects/easing";
 import {RegisterNode} from "@/editor/node/registry";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Rotate', ['fas', 'rotate'], 'commands')
 export class RotateNode extends ElementNode {
@@ -25,9 +26,8 @@ export class RotateNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
-
-        const geo = ctx.getInput()
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        const geo = await ctx.fetchInput()
 
         const startTime = this.param('startTime')!
         const endTime = this.param('endTime')!

@@ -1,12 +1,13 @@
 import {RegisterNode} from "@/editor/node/registry";
 import {ElementNode} from "@/editor/node/element";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {NodeBuilder} from "@/editor/node";
 import {EditorContext} from "@/editor/ctx/context";
 import {WorkerMessage} from "@/editor/node/element/import/worker.message";
 import {NodeDependencyType} from "@/editor/compile";
 import {AttributeType} from "@/editor/objects/attribute";
+import {CookJobContext} from "@/editor/cook/context";
 
 
 @RegisterNode('AudioSpectrum', ['fas', 'headphones'], 'import')
@@ -46,7 +47,7 @@ export class AudioSpectrumNode extends ElementNode {
             )
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
         const sound = this.ctx.clock.sound.value
         if (!sound)
             return CookResult.success(new SBCollection())
@@ -59,8 +60,11 @@ export class AudioSpectrumNode extends ElementNode {
 
         const numSamples = subFrames + 1
         const frames: Float32Array[] = []
+
+        const currentTime = ctx.time
+
         for (let i = 0; i < numSamples; i++) {
-            const time = ctx.TIME + (i / numSamples) * hopSize
+            const time = currentTime + (i / numSamples) * hopSize
             frames.push(this.generateAudioFrame(sound.buffer, time, frameSize * superSample))
         }
         const ffts: Float32Array[] = await this.sendMessageToWorker('spectrum', frames)

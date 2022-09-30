@@ -1,9 +1,10 @@
 import {RegisterNode} from "@/editor/node/registry";
 import {SimulationNode} from "@/editor/node/element/particle/simulation";
 import {NodeBuilder, TimingInformation} from "@/editor/node";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {Vec2} from "@/util/math";
 import {AttributeType} from "@/editor/objects/attribute";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Emitter', ['fas', 'spray-can-sparkles'], 'simulation', 'simulation')
 export class EmitterNode extends SimulationNode {
@@ -22,22 +23,25 @@ export class EmitterNode extends SimulationNode {
     }
 
 
-    cook(ctx: CookContext): CookResult {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
         const startTime = this.param('startTime')!.get()
         const endTime = this.param('endTime')!.get()
 
-        const simGeo = ctx.getInput(0)
 
-        const timeAttribute = 'time'
+        const timeAttributeName = 'time'
 
         const velocityXParam = this.param('velocity.x')!
         const velocityYParam = this.param('velocity.y')!
         const lifetimeParam = this.param('lifetime')!
 
+        const delta = parseFloat(ctx.getQueryValue('delta') ?? '0')
+        const currentTime = ctx.time
 
-        if (ctx.TIME >= startTime && ctx.TIME <= endTime) {
-            const emitGeo = ctx.getInput(1)
-            const hasTime = emitGeo.hasAttribute(timeAttribute)
+        if (currentTime >= startTime && currentTime <= endTime) {
+            const [simGeo, emitGeo] = await Promise.all([
+                ctx.fetchInput(0),
+                ctx.fetchInput(1)
+            ])
 
             if (!emitGeo.hasAttribute('vel'))
                 emitGeo.addAttribute('vel', AttributeType.Vec2)
@@ -46,10 +50,13 @@ export class EmitterNode extends SimulationNode {
             if (!emitGeo.hasAttribute('lifetime'))
                 emitGeo.addAttribute('lifetime', AttributeType.Float)
 
-            if (hasTime) {
+            const timeAttribute = emitGeo.getAttributeContainer<number>(timeAttributeName)
+
+            if (timeAttribute) {
                 emitGeo.filter((index) => {
-                    const time = emitGeo.getAttribute(timeAttribute, index)
-                    return time > ctx.TIME && time <= (ctx.TIME + ctx.DELTA);
+                    const time = timeAttribute.getValue(index)
+
+                    return time > currentTime && time <= (currentTime + delta);
                 })
             }
 
@@ -67,13 +74,17 @@ export class EmitterNode extends SimulationNode {
                 emitGeo.setAttribute('lifetime', index, lifetimeParam.getWithElement({
                     idx: index, el, geo: [emitGeo], ...ctx
                 }))
-                el.offsetAnimation(ctx.TIME)
+                el.offsetAnimation(currentTime)
             })
 
             simGeo.append(emitGeo)
+            return CookResult.success(simGeo)
+
+        } else {
+            const simGeo = await ctx.fetchInput(0)
+            return CookResult.success(simGeo)
         }
 
-        return CookResult.success(simGeo)
     }
 
     get timingInformation(): TimingInformation | undefined {

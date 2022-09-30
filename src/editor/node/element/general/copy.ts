@@ -1,10 +1,11 @@
 import {ElementNode} from "@/editor/node/element";
 import {NodeBuilder} from "@/editor/node";
 import {EditorContext} from "@/editor/ctx/context";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {Vec2} from "@/util/math";
 import {FloatNodeParameter} from "@/editor/node/parameter";
 import {RegisterNode} from "@/editor/node/registry";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Copy', ['fas', 'clone'], 'general')
 export class CopyNode extends ElementNode {
@@ -24,15 +25,19 @@ export class CopyNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
 
-        const geo = ctx.getInput()
+        const original = await ctx.fetchInput(this.inputs[0])
 
         const numCopies = this.param('copies')!.get();
         const moveXParam = this.param('move.x')! as FloatNodeParameter
         const moveYParam = this.param('move.y')! as FloatNodeParameter
+
+        let geo = original.clone();
+
         for (let i = 0; i < numCopies; i++) {
-            const copy = ctx.getInput()
+            const copy = original.clone()
+
             copy.forEach((idx, el) => {
                 el.moveWithCommands(
                     new Vec2(
@@ -49,4 +54,5 @@ export class CopyNode extends ElementNode {
             geo
         );
     }
+
 }

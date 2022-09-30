@@ -1,7 +1,9 @@
 import {RegisterNode} from "@/editor/node/registry";
 import {SimulationNode} from "@/editor/node/element/particle/simulation";
 import {NodeBuilder} from "@/editor/node";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookError, CookResult} from "@/editor/node/cook.context";
+import {CookJobContext} from "@/editor/cook/context";
+import {SBCollection} from "@/editor/objects/collection";
 
 @RegisterNode('Last Frame', ['fas', 'right-to-bracket'], 'simulation', 'simulation')
 export class LastFrameNode extends SimulationNode {
@@ -12,8 +14,14 @@ export class LastFrameNode extends SimulationNode {
             .outputs(1)
     }
 
-    cook(ctx: CookContext): CookResult {
-        return CookResult.success(ctx.getInput())
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        const geo = ctx.inject<SBCollection>('lastFrame')
+
+        if (geo instanceof SBCollection) {
+            return CookResult.success(geo)
+        }
+
+        return CookResult.failure([new CookError(this, 'Could not get input')])
     }
 
 }

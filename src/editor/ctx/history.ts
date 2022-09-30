@@ -30,7 +30,7 @@ export class CommandHistory {
         else
             this.clearPast()
 
-        lastCommand.execute()
+        this.executeCommand(lastCommand)
 
         return true;
     }
@@ -49,7 +49,7 @@ export class CommandHistory {
         else
             this.clearPast()
 
-        nextCommand.execute()
+        this.executeCommand(nextCommand)
 
         this.ctx.save()
 
@@ -61,7 +61,7 @@ export class CommandHistory {
         if (command.createUndo)
             undo = command.createUndo()
 
-        const hadEffect = command.execute()
+        const hadEffect = this.executeCommand(command)
         if (!hadEffect)
             return;
 
@@ -78,4 +78,10 @@ export class CommandHistory {
     clearPast() {
         this.past = []
     }
+
+    private executeCommand(command: EditorCommand) {
+        console.log(command)
+        return command.execute()
+    }
+
 }

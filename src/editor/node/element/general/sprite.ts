@@ -1,12 +1,13 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
 import {NodeBuilder} from "@/editor/node";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {Vec2} from "@/util/math";
 import {Origin} from "@/editor/objects/origin";
 import {NodeDependencyType} from "@/editor/compile";
 import {RegisterNode} from "@/editor/node/registry";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Sprite', ['fas', 'image'], 'objects')
 export class SpriteNode extends ElementNode {
@@ -27,11 +28,10 @@ export class SpriteNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
         const collection = new SBCollection()
         const spriteName = this.getParam<string>('sprite')
         const spriteId = this.ctx.fileStore.getTextureId(spriteName)
-
 
         collection.addSprite(
             this.chv2('position'),

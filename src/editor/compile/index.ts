@@ -15,9 +15,9 @@ import {EditorContext} from "@/editor/ctx/context";
 import presetEnv from '@babel/preset-env'
 //@ts-ignore
 import transformModulesUmd from '@babel/plugin-transform-modules-umd'
-import {CookContext} from "@/editor/node/cook.context";
 import {WrangleModule} from "@/editor/compile/module";
 import {CompilerError} from "@/editor/compile/error";
+import {CookJobContext} from "@/editor/cook/context";
 //@ts-ignore
 const fileClass = babel.File as Constructor<any>
 
@@ -119,16 +119,24 @@ export function compileStatements(code: string, path: EditorPath, ctx: EditorCon
         'code.js': code
     })
 
+    console.log(compiledCode.code)
+
     const moduleName = path.toString().replace(/\//g, '_')
 
     const compiledModule = babel.transformSync(compiledCode.code, {
-        presets: [presetEnv],
+        presets: [
+            /*[presetEnv, {
+                exclude: ["transform-regenerator"],
+                modules: "umd",
+            }]*/
+        ],
         sourceType: 'module',
         filename: moduleName,
         plugins: [transformModulesUmd],
         sourceFileName: moduleName,
     })!
 
+    console.log(presetEnv)
     console.log(compiledModule.code)
 
     eval(compiledModule.code!)
@@ -183,7 +191,7 @@ export class CompiledCodeBlock {
     ) {
     }
 
-    run(ctx: CookContext) {
+    run(ctx: CookJobContext) {
         return this.module.entry(ctx)
     }
 }

@@ -5,4 +5,6 @@ export interface EditorObject {
     getParent(): EditorObject | undefined
 
     canEvaluate(): boolean
+
+    getName(): string
 }

@@ -1,7 +1,7 @@
-import {CookContext} from "@/editor/node/cook.context";
+import {CookJobContext} from "@/editor/cook/context";
 
 export interface WrangleModule {
-    entry(ctx: CookContext): any
+    entry(ctx: CookJobContext): Promise<any>
 }
 
 export interface ExpressionModule {

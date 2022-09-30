@@ -1,11 +1,12 @@
 import {ElementNode} from "@/editor/node/element";
 import {EditorContext} from "@/editor/ctx/context";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {SBCollection} from "@/editor/objects/collection";
 import {NodeBuilder} from "@/editor/node";
 import {RegisterNode} from "@/editor/node/registry";
 import {Vec2} from "@/util/math";
 import {AttributeType} from "@/editor/objects/attribute";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('CopyToPoints', ['fas', 'clone'], 'general')
 export class CopyToPointsNode extends ElementNode {
@@ -27,11 +28,13 @@ export class CopyToPointsNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
         const geo = new SBCollection();
 
-        const geoToCopy = ctx.getInput()
-        const pointsToCopyTo = ctx.getInput(1)
+        const [geoToCopy, pointsToCopyTo] = await Promise.all([
+            ctx.fetchInput(0),
+            ctx.fetchInput(1)
+        ])
         const timingAttributeName = this.param('timingAttribute')!.get() as string
         const timingAttribute = pointsToCopyTo.getAttributeContainer(timingAttributeName)
         const fromCenter = this.param('fromCenter')!.get() as boolean

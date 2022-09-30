@@ -1,8 +1,9 @@
 import {ElementNode} from "@/editor/node/element";
 import {NodeBuilder} from "@/editor/node";
 import {EditorContext} from "@/editor/ctx/context";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {RegisterNode} from "@/editor/node/registry";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Null', ['far', 'square'], 'general')
 export class NullNode extends ElementNode {
@@ -18,9 +19,7 @@ export class NullNode extends ElementNode {
             .outputs(1)
     }
 
-    cook(ctx: CookContext): CookResult {
-        return CookResult.success(
-            ctx.getInput()
-        );
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        return CookResult.success(await ctx.fetchInput())
     }
 }

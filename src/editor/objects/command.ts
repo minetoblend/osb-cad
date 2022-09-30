@@ -29,7 +29,6 @@ export class MoveCommand extends SpriteCommand<Vec2> {
     valueAtTime(time: number): Vec2 {
         time = clamp(time, this.startTime, this.endTime);
 
-
         let f = (time - this.startTime) / (this.endTime - this.startTime)
         if (this.startTime === this.endTime)
             f = 1;

@@ -1,11 +1,10 @@
-import {Node} from "@/editor/node";
+import {Node, NodeStatus} from "@/editor/node";
 
 import {NodeSystem} from "@/editor/node/system";
 import {EditorPath} from "@/editor/node/path";
 import {EditorCommand} from "@/editor/ctx/editorCommand";
 import {CommandHistory} from "@/editor/ctx/history";
-import {CookTask} from "@/editor/node/cook";
-import {computed, reactive, ref, shallowRef, watch} from "vue";
+import {computed, reactive, ref, shallowRef, watch, watchEffect} from "vue";
 import {WorkerPool} from "@/editor/ctx/workerPool";
 import {SBCollection} from "@/editor/objects/collection";
 import {FileStore} from "@/editor/ctx/texture";
@@ -22,8 +21,9 @@ import * as path from "path";
 import {useDevtools} from "@/devtools";
 import {CustomInspectorNode} from "@vue/devtools-api";
 import {EditorObject} from "@/editor/ctx/editorObject";
+import {CookManager} from "@/editor/cook/context";
 
-export class EditorContext implements EditorObject {
+export class EditorContext {
 
     readonly history = new CommandHistory(this)
     readonly activeNode = shallowRef<Node>()
@@ -94,11 +94,10 @@ export class EditorContext implements EditorObject {
     }
 
     setupEvents() {
-        electronAPI.handleUndo(() => {
-            this.history.undo()
-        })
-        electronAPI.handleRedo(() => {
-            this.history.redo()
+        watchEffect(() => {
+            if (this.root.value.status.value === NodeStatus.Dirty) {
+                this.cookNode(this.root.value)
+            }
         })
     }
 
@@ -138,7 +137,10 @@ export class EditorContext implements EditorObject {
     }
 
     cookNode(node: Node) {
-        this.scheduler.schedule(new CookTask(this, node.path))
+        const manager = new CookManager(this)
+        manager.cook(node.path).then(result => {
+            this.currentGeometry.value = result.outputData[0]
+        })
     }
 
     serialize(): SerializedProject {

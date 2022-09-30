@@ -1,5 +1,5 @@
 import {ElementNode} from "@/editor/node/element";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {EditorContext} from "@/editor/ctx/context";
 import {NodeBuilder} from "@/editor/node";
 import {Vec2} from "@/util/math";
@@ -7,6 +7,7 @@ import {SBCollection} from "@/editor/objects/collection";
 import {Origin} from "@/editor/objects/origin";
 import {RegisterNode} from "@/editor/node/registry";
 import Prando from 'prando';
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('Scatter', ['fas', 'spray-can'], 'objects')
 export class ScatterNode extends ElementNode {
@@ -28,13 +29,13 @@ export class ScatterNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
+    cook(ctx: CookJobContext): CookResult {
         const geo = new SBCollection()
 
         const centre = this.chv2('centre')
         const size = this.chv2('size')
-        const amount = this.param('amount')!.get(ctx)
-        const seed = this.param('seed')!.get(ctx)
+        const amount = this.param('amount')!.get()
+        const seed = this.param('seed')!.get()
 
         const rng = new Prando(seed * 1000)
 
@@ -51,6 +52,5 @@ export class ScatterNode extends ElementNode {
 
         return CookResult.success(geo)
     }
-
 
 }

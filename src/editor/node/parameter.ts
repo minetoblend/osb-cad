@@ -13,12 +13,13 @@ import {SBCollection} from "@/editor/objects/collection";
 import {SBElement} from "@/editor/objects";
 import {Origin} from "@/editor/objects/origin";
 import {SerializedNodeParam} from "@/editor/ctx/serialize";
+import {EditorObject} from "@/editor/ctx/editorObject";
 
 
-export abstract class NodeParameter {
+export abstract class NodeParameter implements EditorObject {
     readonly value = shallowRef<any>()
 
-    constructor(readonly node: Node, readonly id: string) {
+    protected constructor(readonly node: Node, readonly id: string) {
     }
 
     abstract type: string
@@ -103,6 +104,22 @@ export abstract class NodeParameter {
 
     getRaw() {
         return this.value.value
+    }
+
+    canEvaluate(): boolean {
+        return false;
+    }
+
+    getChild(name: string): EditorObject | undefined {
+        return undefined;
+    }
+
+    getParent(): EditorObject | undefined {
+        return this.node;
+    }
+
+    getName(): string {
+        return this.id
     }
 }
 

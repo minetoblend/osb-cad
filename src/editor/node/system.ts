@@ -3,13 +3,15 @@ import {NodeConnection} from "@/editor/node/connection";
 import {EditorPath} from "@/editor/node/path";
 import {ref, shallowReactive, watch, WatchStopHandle} from "vue";
 import {EditorContext} from "@/editor/ctx/context";
-import {CookContext, CookResult} from "@/editor/node/cook.context";
+import {CookResult} from "@/editor/node/cook.context";
 import {NodeDependencyType} from "@/editor/compile";
 import {endsWithNumber, getNumberAtEnd} from "@/util/string";
 import type {Deserializer, SerializedNodeSystem} from "@/editor/ctx/serialize";
 import {NodeInput, NodeOutput} from "@/editor/node/input";
 import {NodeDependency} from "@/editor/node/dependency";
 import {MarkDirtyReason} from "@/editor/node/markDirty";
+import {CookJobContext} from "@/editor/cook/context";
+import {SBCollection} from "@/editor/objects/collection";
 
 export abstract class NodeSystem<N extends Node> extends Node {
 
@@ -31,6 +33,18 @@ export abstract class NodeSystem<N extends Node> extends Node {
         })
     }
 
+    //region cook
+
+    async cook(ctx: CookJobContext): Promise<CookResult> {
+        if (this.outputNode.value) {
+            const result = await ctx.fetch(ctx.path.child(this.outputNode.value))
+            return CookResult.success(result)
+        }
+        return CookResult.success(new SBCollection())
+    }
+
+    //endregion
+
     get nodeList() {
         return this.nodes.values()
     }
@@ -47,17 +61,11 @@ export abstract class NodeSystem<N extends Node> extends Node {
         return [...this.connectionSelection.values()]
     }
 
-    async cook(ctx: CookContext): Promise<CookResult> {
-        const output = ctx.fetch('output')
-
-        return CookResult.success(output[0]);
-    }
-
     find(path: EditorPath): Node | null {
         if (path.length === 0)
             return this
 
-        const node = this.nodes.get(path.current)
+        const node = this.nodes.get(path.start)
         if (node) {
             return node.find(path.shift())
         }
@@ -185,10 +193,6 @@ export abstract class NodeSystem<N extends Node> extends Node {
 
     markDirty(reason?: MarkDirtyReason, visited: Set<Node> = new Set<Node>()) {
         super.markDirty(reason, visited);
-
-        if (!this.parent && this.name.value === 'root') {
-            return this.ctx.cookNode(this)
-        }
     }
 
     findDependenciesForCooking(visited: Set<Node> = new Set<Node>()): NodeDependency[] {
@@ -299,10 +303,6 @@ export abstract class NodeSystem<N extends Node> extends Node {
 
     get nodeNames(): IterableIterator<string> {
         return this.nodes.keys()
-    }
-
-    resetStats() {
-        this.nodes.forEach(it => it.resetStats())
     }
 
     getChild(name: string): any {

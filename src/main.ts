@@ -25,6 +25,8 @@ const app = createApp(App)
     .use(ElementPlus)
     .component('icon', FontAwesomeIcon)
 
+
+
 createOsbCadDevtools(app)
 
 app.mount('#app');

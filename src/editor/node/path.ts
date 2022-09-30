@@ -2,20 +2,22 @@ import {EditorObject} from "@/editor/ctx/editorObject";
 
 export class EditorPath {
     readonly parts: ReadonlyArray<string>
+    readonly query: Map<string, string>;
 
-    constructor(parts: string[]) {
+    constructor(parts: ReadonlyArray<string>, query = new Map<string, string>()) {
         this.parts = Object.freeze(parts)
+        this.query = query
     }
 
     get length() {
         return this.parts.length
     }
 
-    get current() {
+    get start() {
         return this.parts[0]
     }
 
-    get leaf() {
+    get end() {
         return this.parts[this.parts.length - 1]
     }
 
@@ -31,7 +33,10 @@ export class EditorPath {
     }
 
     toString() {
-        return '/' + this.parts.join('/')
+        if (this.query.size > 0) {
+            return `/${this.parts.join('/')}?${[...this.query.entries()].map(([k, v]) => `${k}=${v}`).join('&')}`
+        }
+        return `/${this.parts.join('/')}`
     }
 
     replace(name: string) {
@@ -122,5 +127,33 @@ export class EditorPath {
             curObj = nextObj
         }
         return curObj
+    }
+
+    static fromObject(obj: EditorObject) {
+        let curObj: EditorObject | undefined = obj
+        let parts = []
+        while (curObj) {
+            if (curObj.getParent())
+                parts.unshift(curObj.getName())
+
+            curObj = curObj.getParent()
+        }
+
+        return new EditorPath(parts)
+    }
+
+    clone() {
+        return new EditorPath(this.parts, new Map(this.query));
+    }
+
+    setQueryWeak(key: string, value: string | number) {
+        if (!this.query.has(key)) {
+            this.query.set(key, value.toString())
+        }
+    }
+
+    withQuery(key: string, value: string | number) {
+        this.query.set(key, value.toString())
+        return this
     }
 }

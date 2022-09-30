@@ -1,5 +1,5 @@
 import {ElementNode} from "@/editor/node/element";
-import {CookContext, CookError, CookResult} from "@/editor/node/cook.context";
+import {CookError, CookResult} from "@/editor/node/cook.context";
 import {KeyframeInformation, NodeBuilder, TimingInformation} from "@/editor/node";
 import {SBCollection} from "@/editor/objects/collection";
 import {NodeDependencyType} from "@/editor/compile";
@@ -7,6 +7,7 @@ import {Vec2} from "@/util/math";
 import {Origin} from "@/editor/objects/origin";
 import {RegisterNode} from "@/editor/node/registry";
 import {AttributeType} from "@/editor/objects/attribute";
+import {CookJobContext} from "@/editor/cook/context";
 
 @RegisterNode('HitObjects', ['fas', 'dorchadas'], 'import')
 export class HitObjectsNode extends ElementNode {
@@ -22,7 +23,7 @@ export class HitObjectsNode extends ElementNode {
             )
     }
 
-    cook(ctx: CookContext): CookResult {
+    async cook(ctx: CookJobContext): Promise<CookResult> {
         const geo = new SBCollection()
 
         const beatmap = this.ctx.currentBeatmapObject.value
