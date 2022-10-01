@@ -18,6 +18,7 @@ import 'vfonts/OpenSans.css'
 
 import './style.scss'
 import {createOsbCadDevtools} from "@/devtools";
+import {initEditorExtension} from "@/lang/editor.extension";
 
 library.add(fas, far, dorchadas)
 
@@ -31,3 +32,4 @@ createOsbCadDevtools(app)
 
 app.mount('#app');
 
+initEditorExtension()
