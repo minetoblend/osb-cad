@@ -3,8 +3,8 @@ import {
     CompiledExpression,
     compileExpression,
     compileStatements,
-    NodeDependencyType,
-    globalFunctions
+    globalFunctions,
+    NodeDependencyType
 } from "@/editor/compile";
 import {Node} from "@/editor/node/index";
 import {Color, Vec2} from "@/util/math";
@@ -14,6 +14,7 @@ import {SBElement} from "@/editor/objects";
 import {Origin} from "@/editor/objects/origin";
 import {SerializedNodeParam} from "@/editor/ctx/serialize";
 import {EditorObject} from "@/editor/ctx/editorObject";
+import {AttributeType} from "@/editor/objects/attribute";
 
 
 export abstract class NodeParameter implements EditorObject {
@@ -277,9 +278,69 @@ export class CodeNodeParameter extends NodeParameter {
     }
 
     initFrom(serializedParam: SerializedNodeParam) {
-        console.log(this.node)
         this.value.value = serializedParam.value.value
         this.compiledCode = compileStatements(serializedParam.value.value, this.node.path, this.node.ctx)
+    }
+
+    private typesChanged = shallowRef(true)
+
+    private attributes: { name: string, type: AttributeType }[] = []
+
+    private cachedTypeDefs = shallowRef<string>()
+
+    setAttributes(attributes: { name: string, type: AttributeType }[]) {
+        if (attributes.length !== this.attributes.length)
+            this.typesChanged.value = true
+        else if (attributes.some((value, index) =>
+            value.type !== this.attributes[index].type ||
+            value.name !== this.attributes[index].name
+        ))
+            this.typesChanged.value = true
+        this.attributes = attributes
+    }
+
+    get typeDefs() {
+        if (this.typesChanged || true) {
+            this.generateTypeDefs()
+        }
+        return this.cachedTypeDefs.value
+    }
+
+    generateTypeDefs() {
+        console.warn('typedefs')
+        console.warn(this.attributes)
+
+        const lines: string[] = [
+            '"use strict";',
+            'export {}',
+            '',
+            'declare global {'
+        ]
+
+        this.attributes.forEach(attribute => {
+            let expandedType = 'unknown'
+            switch (attribute.type) {
+                case AttributeType.Group:
+                    expandedType = 'boolean';
+                    break;
+                case AttributeType.Float:
+                case AttributeType.Int:
+                    expandedType = 'number';
+                    break;
+                case AttributeType.Vec2:
+                    expandedType = 'Vec2';
+                    break;
+            }
+            lines.push(`let $${attribute.name}: ${expandedType};`)
+            lines.push(`let ${attribute.type}$${attribute.name}: ${expandedType};`)
+            lines.push(`function getAttrib(geo: string | number, name: '${attribute.name}', idx: number): ${expandedType};`)
+            lines.push(`function setAttrib(name: '${attribute.name}', idx: number, value: ${expandedType}): void;`)
+        })
+
+        lines.push('}f')
+
+        this.cachedTypeDefs.value = lines.join('\n')
+        this.typesChanged.value = false
     }
 }
 

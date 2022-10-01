@@ -26,7 +26,7 @@ export class ParticleSolverNode extends SimulationNode {
         if (!geo.hasAttribute('vel'))
             geo.addAttribute('vel', AttributeType.Vec2)
 
-        const delta = parseFloat(ctx.getQueryValue('delta') ?? '0')
+        const delta = ctx.delta
 
         geo.filter((index) => {
             const lifetime = geo.getAttribute<number>('lifetime', index)

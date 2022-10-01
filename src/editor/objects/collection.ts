@@ -179,15 +179,27 @@ export class SBCollection {
     }
 
     filter(predicate: (index: number, el: SBElement) => boolean) {
-        //let indexes: number[] = []
-        const bitset = new TypedFastBitSet()
+        const indices = new TypedFastBitSet()
         for (let i = 0; i < this.elements.length; i++) {
             if (predicate(i, this.elements[i])) {
-                bitset.add(i)
+                indices.add(i)
             }
         }
-        this.elements = this.elements.filter((_, index) => bitset.has(index))
-        this.attributes.forEach(attribute => attribute.filterIndexes(bitset))
+        this.elements = this.elements.filter((_, index) => indices.has(index))
+        this.attributes.forEach(attribute => attribute.filterIndexes(indices))
+
+        return this;
+    }
+
+    deleteIndices(indices: TypedFastBitSet) {
+        const inverted = new TypedFastBitSet()
+        this.elements.forEach((_, index) => {
+            if (!indices.has(index))
+                inverted.add(index)
+        })
+
+        this.elements = this.elements.filter((_, index) => inverted.has(index))
+        this.attributes.forEach(attribute => attribute.filterIndexes(inverted))
 
         return this;
     }

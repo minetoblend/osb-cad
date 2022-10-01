@@ -34,7 +34,7 @@ export class EmitterNode extends SimulationNode {
         const velocityYParam = this.param('velocity.y')!
         const lifetimeParam = this.param('lifetime')!
 
-        const delta = parseFloat(ctx.getQueryValue('delta') ?? '0')
+        const delta = ctx.delta
         const currentTime = ctx.time
 
         if (currentTime >= startTime && currentTime <= endTime) {

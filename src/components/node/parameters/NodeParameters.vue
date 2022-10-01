@@ -24,7 +24,6 @@ const activeNode = computed(() => ctx.activeNode.value)
 <style lang="scss">
 .node-param {
   display: flex;
-  padding: 10px;
   align-items: baseline;
 
   label {

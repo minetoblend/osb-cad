@@ -51,8 +51,12 @@ export class SpriteWrangleNode extends ElementNode {
             }
 
             try {
-
                 const prefetched = [await ctx.fetchInput()]
+
+                codeParam.setAttributes([...prefetched[0].attributes.entries()].map(([name, it]) => ({
+                    name,
+                    type: it.type
+                })))
 
                 const result = await compiledCode.run(ctx, prefetched)
 

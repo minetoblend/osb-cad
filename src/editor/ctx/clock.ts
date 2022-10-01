@@ -38,7 +38,7 @@ export class EditorClock {
         this._time.actual = time
         if (animated) {
             this._tween = gsap.to(this._time, {
-                duration: 0.12,
+                duration: 0.2,
                 animated: time
             })
             if (!this.isPlaying) {

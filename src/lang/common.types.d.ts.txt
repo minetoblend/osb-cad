@@ -1,0 +1,147 @@
+"use strict";
+
+class vec2 {
+    constructor(public x: number, public y: number) {
+    }
+
+    constructor(public x: number = 0, public y: number = x) {
+
+    }
+
+    get length() {
+        return Math.sqrt(this.x * this.x + this.y * this.y);
+    }
+
+    get lengthSquared() {
+        return this.x * this.x + this.y * this.y;
+    }
+
+    get normalized() {
+        const l = this.length
+        return this.divF(l)
+    }
+
+    static zero() {
+        return new vec2();
+    }
+
+    static one() {
+        return new vec2(1, 1);
+    }
+
+    static playfieldCentre() {
+        return new vec2(320, 240)
+    }
+
+    clone() {
+        return new vec2(this.x, this.y)
+    }
+
+    add({x, y}: vec2) {
+        return new vec2(this.x + x, this.y + y)
+    }
+
+    sub({x, y}: vec2) {
+        return new vec2(this.x - x, this.y - y)
+    }
+
+    mul({x, y}: vec2) {
+        return new vec2(this.x * x, this.y * y)
+    }
+
+    div({x, y}: vec2) {
+        return new vec2(this.x / x, this.y / y)
+    }
+
+    addF(f: number) {
+        return new vec2(this.x + f, this.y + f)
+    }
+
+    subF(f: number) {
+        return new vec2(this.x - f, this.y - f)
+    }
+
+    mulF(f: number) {
+        return new vec2(this.x * f, this.y * f)
+    }
+
+    divF(f: number) {
+        return new vec2(this.x / f, this.y / f)
+    }
+
+    rotate(angle: number) {
+        const cs = Math.cos(angle)
+        const sn = Math.sin(angle)
+        return new vec2(
+            this.x * cs - this.y * sn,
+            this.x * sn + this.y * cs,
+        )
+    }
+
+    rotateDeg(angle: number) {
+        const cs = Math.cos(angle / 180 * Math.PI)
+        const sn = Math.sin(angle / 180 * Math.PI)
+        return new vec2(
+            this.x * cs - this.y * sn,
+            this.x * sn + this.y * cs,
+        )
+    }
+
+    withX(x: number) {
+        return new vec2(x, this.y)
+    }
+
+    withY(y: number) {
+        return new vec2(this.x, y)
+    }
+
+    lerp({x, y}: vec2, f: number) {
+        return new vec2(
+            this.x + (x - this.x) * f,
+            this.y + (y - this.y) * f
+        )
+    }
+
+    set(x: number | vec2, y?: number) {
+        if (x instanceof vec2) {
+            this.x = x.x
+            this.y = x.y
+        } else {
+            this.x = x
+            this.y = y ?? this.y
+        }
+    }
+
+    move(rhs: vec2) {
+        this.x += rhs.x
+        this.y += rhs.y
+    }
+
+    min({x, y}: vec2): vec2 {
+        return new vec2(
+            Math.min(this.x, x),
+            Math.min(this.y, y),
+        )
+    }
+
+    max({x, y}: vec2): vec2 {
+        return new vec2(
+            Math.max(this.x, x),
+            Math.max(this.y, y),
+        )
+    }
+
+    toString() {
+        return `(${this.x}, ${this.y})`
+    }
+
+    equals(rhs: vec2) {
+        return this.x === rhs.x && this.y === rhs.y
+    }
+}
+
+let $pos: vec2;
+let $scale: vec2;
+let $rotation: number;
+
+

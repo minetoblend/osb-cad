@@ -1,11 +1,11 @@
 const AutoImport = require('unplugin-auto-import/webpack')
 const Components = require('unplugin-vue-components/webpack')
-const { ElementPlusResolver } = require('unplugin-vue-components/resolvers')
+const {ElementPlusResolver} = require('unplugin-vue-components/resolvers')
 const webpack = require('webpack')
+const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin');
 
 const {defineConfig} = require('@vue/cli-service')
 module.exports = defineConfig({
-    transpileDependencies: true,
     publicPath: './',
     chainWebpack: config =>
         config.module
@@ -30,8 +30,16 @@ module.exports = defineConfig({
             new webpack.ProvidePlugin({
                 process: 'process/browser',
             }),
+            new MonacoWebpackPlugin()
         ],
-        output: {
+        output: {},
+        module: {
+            rules: [
+                {
+                    test: /\.txt$/i,
+                    use: 'raw-loader',
+                },
+            ]
         }
     }
 })

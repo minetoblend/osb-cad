@@ -11,7 +11,7 @@
             delta: {{ Math.floor(ctx.updateTimes[0] * 10) / 10 }}ms
           </div>
           <div>
-            Command count: {{ statistics.commandCount }} ({{ statistics.visibleSprites / statistics.commandCount }}
+            Command count: {{ statistics.commandCount }} ({{ statistics.visibleSprites && (statistics.commandCount / statistics.visibleSprites) }}
             Commands / sprite)
           </div>
           <div>

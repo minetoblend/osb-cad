@@ -2,9 +2,9 @@ import {EditorObject} from "@/editor/ctx/editorObject";
 
 export class EditorPath {
     readonly parts: ReadonlyArray<string>
-    readonly query: Map<string, string>;
+    readonly query: Map<string, string | number>;
 
-    constructor(parts: ReadonlyArray<string>, query = new Map<string, string>()) {
+    constructor(parts: ReadonlyArray<string>, query = new Map<string, string | number>()) {
         this.parts = Object.freeze(parts)
         this.query = query
     }
@@ -148,12 +148,12 @@ export class EditorPath {
 
     setQueryWeak(key: string, value: string | number) {
         if (!this.query.has(key)) {
-            this.query.set(key, value.toString())
+            this.query.set(key, value)
         }
     }
 
     withQuery(key: string, value: string | number) {
-        this.query.set(key, value.toString())
+        this.query.set(key, value)
         return this
     }
 }

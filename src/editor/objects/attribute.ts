@@ -4,7 +4,8 @@ import {Vec2} from "@/util/math";
 export enum AttributeType {
     Int = 'i',
     Float = 'f',
-    Vec2 = 'v'
+    Vec2 = 'v',
+    Group = 'g'
 }
 
 export abstract class Attribute<T> {
@@ -34,6 +35,8 @@ export abstract class Attribute<T> {
     get byteLength() {
         return this.length * this.bytesPerElement
     }
+
+    abstract type: AttributeType;
 }
 
 export abstract class ArrayBufferContainer<T, I extends Float32Array | Int32Array | Uint8Array> extends Attribute<T> {
@@ -152,6 +155,10 @@ export class FloatAttributeContainer extends ArrayBufferContainer<number, Float3
     set(values: ArrayLike<number>, offset: number | undefined): void {
         this.view.set(values, offset)
     }
+
+    get type() {
+        return AttributeType.Float;
+    }
 }
 
 export class IntAttributeContainer extends ArrayBufferContainer<number, Int32Array> {
@@ -186,6 +193,10 @@ export class IntAttributeContainer extends ArrayBufferContainer<number, Int32Arr
 
     set(values: ArrayLike<number>, offset: number | undefined): void {
         this.view.set(values, offset)
+    }
+
+    get type() {
+        return AttributeType.Int;
     }
 }
 
@@ -272,6 +283,11 @@ export class GroupAttributeContainer extends Attribute<boolean> {
     setValue(index: number, value: boolean): void {
     }
 
+
+    get type() {
+        return AttributeType.Group;
+    }
+
 }
 
 
@@ -319,4 +335,8 @@ export class Vec2AttributeContainer extends ArrayBufferContainer<Vec2, Float32Ar
         }
     }
 
+
+    get type() {
+        return AttributeType.Vec2;
+    }
 }

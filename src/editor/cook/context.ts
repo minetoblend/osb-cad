@@ -6,6 +6,7 @@ import {CookResult, CookResultType} from "@/editor/node/cook.context";
 import {NodeInput} from "@/editor/node/input";
 import {SBCollection} from "@/editor/objects/collection";
 import {globalFunctions, NodeDependencyType} from "@/editor/compile";
+import TypedFastBitSet from "typedfastbitset";
 
 export class CookManager {
 
@@ -170,7 +171,7 @@ export class CookJobContext {
         this.parent?.markNodeDependencyTypeUsed(type)
     }
 
-    getQueryValue(name: string): string | undefined {
+    getQueryValue(name: string): string | number | undefined {
         this.markQueryValueUsed(name)
         return this.path.query.get(name)
     }
@@ -178,10 +179,21 @@ export class CookJobContext {
     get time(): number {
         const value =
             this.getQueryValue('time')
-        if (value)
+        if (typeof value === 'string')
             return parseInt(value)
+        if (value !== undefined)
+            return value
 
         throw Error('no time')
+    }
+
+    get delta(): number {
+        const value =
+            this.getQueryValue('delta')
+        if (typeof value === 'string')
+            return parseFloat(value)
+
+        return value ?? 0
     }
 
     readonly functions = globalFunctions
@@ -193,5 +205,9 @@ export class CookJobContext {
     getTextureId(spriteName: string) {
         this.markNodeDependencyTypeUsed(NodeDependencyType.Texture)
         return this.ctx.fileStore.getTextureId(spriteName)
+    }
+
+    readonly utils = {
+        BitSet: TypedFastBitSet
     }
 }

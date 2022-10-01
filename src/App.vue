@@ -6,10 +6,12 @@
 import {defineComponent} from 'vue';
 import StoryboardEditor from "@/components/StoryboardEditor.vue";
 import ProjectManager from "@/ProjectManager.vue";
+import CodeEditor from "@/lang/CodeEditor.vue";
 
 export default defineComponent({
   name: 'App',
   components: {
+    CodeEditor,
     ProjectManager,
     StoryboardEditor
   }

@@ -1,17 +1,7 @@
 <template>
-  <div v-if="param" class="code-param" ref="element">
-    <codemirror
-        v-model="code"
-        placeholder="Code goes here..."
-        :style="{ height: '400px' }"
-        :autofocus="true"
-        :indent-with-tab="true"
-        :tab-size="2"
-        :extensions="extensions"
-        @blur="saveCode"
-    >
-
-    </codemirror>
+  <div v-if="param" class="code-param" ref="element" style="height: 500px">
+    <code-editor v-model="code" :path="node.path.toString()" :extra-lib="param.typeDefs"
+                 :key="param.node.path.toString()"/>
   </div>
 </template>
 
@@ -19,11 +9,10 @@
 import {computed, defineProps, onBeforeUnmount, PropType, ref, watch} from "vue";
 import {NodeInterfaceItem} from "@/editor/node/interface";
 import {Node} from "@/editor/node";
-import {Codemirror} from 'vue-codemirror'
-import {javascript, javascriptLanguage} from '@codemirror/lang-javascript'
-import {oneDark} from '@codemirror/theme-one-dark'
-import {CompletionContext} from '@codemirror/autocomplete'
+import {javascript} from '@codemirror/lang-javascript'
 import {builtinStatementMethods} from "@/editor/compile";
+import CodeEditor from "@/lang/CodeEditor.vue";
+import {CodeNodeParameter} from "@/editor/node/parameter";
 
 const props = defineProps({
   node: {
@@ -39,38 +28,7 @@ const lang = javascript()
 
 const methods = [...builtinStatementMethods]
 
-function complete(context: CompletionContext) {
-  let word = context.matchBefore(/[\w$]*/)!
-  if (word.from == word.to && !context.explicit)
-    return null
-  const options = []
-
-  if ('$pos'.startsWith(word.text)) {
-    options.push({label: '$pos', type: 'variable', info: "Sprite position"})
-  }
-  if ('$img'.startsWith(word.text)) {
-    options.push({label: '$img', type: 'variable', info: "Sprite image"})
-  }
-
-  methods.forEach(method => {
-    if (method.toLowerCase().startsWith(word.text.toLowerCase()))
-      options.push({
-        label: method,
-        type: 'function',
-      })
-  })
-
-  return {
-    from: word!.from,
-    options: options
-  }
-}
-
-const extensions = [javascript(), oneDark, javascriptLanguage.data.of({
-  autocomplete: complete
-})]
-
-const param = computed(() => props.node.params.get(props.interface.id))
+const param = computed(() => props.node.params.get(props.interface.id) as CodeNodeParameter)
 
 const code = ref('')
 const dirty = ref(false)
@@ -111,7 +69,6 @@ function isDescendant(parent: HTMLElement, child: HTMLElement): boolean {
 const element = ref<HTMLDivElement>()
 
 function onClickAnywhere(evt: MouseEvent) {
-
   if (evt.target instanceof HTMLElement && !isDescendant(element.value!, evt.target)) {
     saveCode()
   }
@@ -120,12 +77,9 @@ function onClickAnywhere(evt: MouseEvent) {
 document.addEventListener('mousedown', onClickAnywhere)
 
 onBeforeUnmount(() => document.removeEventListener('mousedown', onClickAnywhere))
-
-
 </script>
 
 <style lang="scss">
 .code-param {
-  padding: 15px;
 }
 </style>

@@ -15,6 +15,8 @@ export class AnalyzeVisitor {
     readonly errors: CompilerError[] = []
     readonly staticContextAccess = new Map<string, ContextAccess>()
 
+    hasDelete = false
+
     addAttribute(path: NodePath, name: string, type?: AttributeType) {
         const attr = this.attributes.get(name)
         if (attr) {
@@ -151,6 +153,11 @@ export class AnalyzeVisitor {
                     }
                     path.setData('type', 'contextAccess')
                     path.setData('metadata', metadata)
+                }
+
+                if (name === 'deleteSprite') {
+                    path.setData('type', 'deleteSprite')
+                    this.hasDelete = true
                 }
             }
         },
