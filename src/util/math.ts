@@ -22,6 +22,8 @@ export interface IHasMathOperations<T> {
     divF(rhs: number): T
 
     lerp(rhs: T, f: number): T
+
+    equals(rhs: T): boolean
 }
 
 export class Float implements IHasMathOperations<Float> {
@@ -67,6 +69,10 @@ export class Float implements IHasMathOperations<Float> {
 
     clone() {
         return new Float(this.value)
+    }
+
+    equals(rhs: Float): boolean {
+        return this.value === rhs.value;
     }
 }
 
@@ -323,6 +329,10 @@ export class Color implements IHasMathOperations<Color> {
 
     subF(rhs: number): Color {
         return new Color(this.r - rhs, this.g - rhs, this.b - rhs);
+    }
+
+    equals(rhs: Color): boolean {
+        return this.r === rhs.r && this.g === rhs.g && this.b === rhs.b;
     }
 }
 

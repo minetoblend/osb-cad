@@ -18,6 +18,18 @@ export class AnimatedValue<T extends IHasMathOperations<T>> {
     }
 
     addCommand(command: SpriteCommand<T>) {
+        if(this.commands.length === 1 ){
+            const existingCommand = this.commands[0]
+            if(existingCommand.startTime === existingCommand.endTime &&
+                command.startTime === existingCommand.endTime &&
+                existingCommand.valueAtTime(existingCommand.startTime).equals(existingCommand.valueAtTime(existingCommand.endTime)) &&
+                command.valueAtTime(command.startTime).equals(existingCommand.valueAtTime(existingCommand.endTime))
+            ) {
+                this.commands = [command];
+                return;
+            }
+        }
+
         this.commands.splice(this.findCommandIndex(command.startTime).index, 0, command)
     }
 
