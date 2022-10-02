@@ -7,10 +7,10 @@ import {
     MoveCommand,
     RotateCommand,
     ScaleCommand,
-    ScaleVecCommand, SpriteCommand
+    ScaleVecCommand,
+    SpriteCommand
 } from "@/editor/objects/command";
 import {Easing} from "@/editor/objects/easing";
-import {Matrix} from "pixi.js";
 
 export class SBElement {
     constructor(pos: Vec2, origin: Origin, sprite: number, scale: Vec2) {
@@ -103,74 +103,308 @@ export class SBElement {
         return SBElementType.Sprite
     }
 
-    move(opts: MoveOptions) {
-        const endTime = opts.endTime
-        const startTime = opts.startTime ?? endTime
+    move(easing: Easing, startTime: number, endTime: number, startPos: Vec2, endPos: Vec2): void;
+    move(startTime: number, endTime: number, startPos: Vec2, endPos: Vec2): void;
+    move(easing: Easing, time: number, position: Vec2): void;
+    move(time: number, position: Vec2): void;
 
-        const endPos = opts.endPos
-        const startPos = opts.startPos ?? endPos
+    move(...args:
+             [Easing, number, number, Vec2, Vec2] |
+             [number, number, Vec2, Vec2] |
+             [Easing, number, Vec2] |
+             [number, Vec2]
+    ) {
+        let startPos, endPos: Vec2;
+        let startTime, endTime: number;
+        let easing: Easing;
 
-        const easing = opts.easing ?? Easing.Linear;
+        switch (args.length) {
+            case 2:
+                endTime = args[0];
+                startTime = this._moveTimeline?.lastCommand?.endTime ?? endTime;
+                endPos = args[1];
+                startPos = (this._moveTimeline?.lastCommand as MoveCommand | undefined)?.endPos ?? endPos;
+                easing = Easing.Linear;
+                break;
+            case 3:
+                endTime = args[1];
+                startTime = this._moveTimeline?.lastCommand?.endTime ?? endTime;
+                endPos = args[2];
+                startPos = (this._moveTimeline?.lastCommand as MoveCommand | undefined)?.endPos ?? endPos;
+                easing = args[0];
+                break;
+            case 4:
+                startTime = args[0];
+                endTime = args[1];
+                startPos = args[2];
+                endPos = args[3];
+                easing = Easing.Linear;
+                break;
+            case 5:
+                easing = args[0];
+                startTime = args[1];
+                endTime = args[2];
+                startPos = args[3];
+                endPos = args[4];
+                break;
+            default:
+                throw Error('Incorrect number of arguments')
+        }
 
         this.moveTimeline.addCommand(new MoveCommand(easing, startTime, endTime, startPos, endPos))
     }
 
-    scale(opts: ScaleOptions) {
-        const endTime = opts.endTime
-        const startTime = opts.startTime ?? endTime
+    scale(easing: Easing, startTime: number, endTime: number, startScale: number, endScale: number): void;
+    scale(startTime: number, endTime: number, startScale: number, endScale: number): void;
+    scale(easing: Easing, time: number, position: number): void;
+    scale(time: number, position: number): void;
 
-        const endScale = opts.endScale
-        const startScale = opts.startScale ?? endScale
+    scale(...args:
+              [Easing, number, number, number, number] |
+              [number, number, number, number] |
+              [Easing, number, number] |
+              [number, number]
+    ) {
+        let startScale, endScale: Float;
+        let startTime, endTime: number;
+        let easing: Easing;
 
-        const easing = opts.easing ?? Easing.Linear;
+        switch (args.length) {
+            case 2:
+                endTime = args[0];
+                startTime = this._scaleTimeline?.lastCommand?.endTime ?? endTime;
+                endScale = new Float(args[1]);
+                startScale = (this._scaleTimeline?.lastCommand as ScaleCommand | undefined)?.endScale ?? endScale;
+                easing = Easing.Linear;
+                break;
+            case 3:
+                endTime = args[1];
+                startTime = this._scaleTimeline?.lastCommand?.endTime ?? endTime;
+                endScale = new Float(args[2]);
+                startScale = (this._scaleTimeline?.lastCommand as ScaleCommand | undefined)?.endScale ?? endScale;
+                easing = args[0];
+                break;
+            case 4:
+                startTime = args[0];
+                endTime = args[1];
+                startScale = new Float(args[2]);
+                endScale = new Float(args[3]);
+                easing = Easing.Linear;
+                break;
+            case 5:
+                easing = args[0];
+                startTime = args[1];
+                endTime = args[2];
+                startScale = new Float(args[3]);
+                endScale = new Float(args[4]);
+                break;
+            default:
+                throw Error('Incorrect number of arguments')
+        }
 
-        this.scaleTimeline.addCommand(new ScaleCommand(easing, startTime, endTime, new Float(startScale), new Float(endScale)))
+        this.scaleTimeline.addCommand(new ScaleCommand(easing, startTime, endTime, startScale, endScale))
     }
 
-    scaleVec(opts: ScaleVecOptions) {
-        const endTime = opts.endTime
-        const startTime = opts.startTime ?? endTime
+    scaleVec(easing: Easing, startTime: number, endTime: number, startScale: Vec2, endScale: Vec2): void;
+    scaleVec(startTime: number, endTime: number, startScale: Vec2, endScale: Vec2): void;
+    scaleVec(easing: Easing, time: number, position: Vec2): void;
+    scaleVec(time: number, position: Vec2): void;
 
-        const endScale = opts.endScale
-        const startScale = opts.startScale ?? endScale
+    scaleVec(...args:
+                 [Easing, number, number, Vec2, Vec2] |
+                 [number, number, Vec2, Vec2] |
+                 [Easing, number, Vec2] |
+                 [number, Vec2]
+    ) {
+        let startScale, endScale: Vec2;
+        let startTime, endTime: number;
+        let easing: Easing;
 
-        const easing = opts.easing ?? Easing.Linear;
+        switch (args.length) {
+            case 2:
+                endTime = args[0];
+                startTime = this._scaleVecTimeline?.lastCommand?.endTime ?? endTime;
+                endScale = args[1];
+                startScale = (this._scaleVecTimeline?.lastCommand as ScaleVecCommand | undefined)?.endScale ?? endScale;
+                easing = Easing.Linear;
+                break;
+            case 3:
+                endTime = args[1];
+                startTime = this._scaleVecTimeline?.lastCommand?.endTime ?? endTime;
+                endScale = args[2];
+                startScale = (this._scaleVecTimeline?.lastCommand as ScaleVecCommand | undefined)?.endScale ?? endScale;
+                easing = args[0];
+                break;
+            case 4:
+                startTime = args[0];
+                endTime = args[1];
+                startScale = args[2];
+                endScale = args[3];
+                easing = Easing.Linear;
+                break;
+            case 5:
+                easing = args[0];
+                startTime = args[1];
+                endTime = args[2];
+                startScale = args[3];
+                endScale = args[4];
+                break;
+            default:
+                throw Error('Incorrect number of arguments')
+        }
 
         this.scaleVecTimeline.addCommand(new ScaleVecCommand(easing, startTime, endTime, startScale, endScale))
     }
 
-    rotate(opts: RotateOptions) {
-        const endTime = opts.endTime
-        const startTime = opts.startTime ?? endTime
+    rotate(easing: Easing, startTime: number, endTime: number, startAngle: number, endAngle: number): void;
+    rotate(startTime: number, endTime: number, startAngle: number, endAngle: number): void;
+    rotate(easing: Easing, time: number, position: number): void;
+    rotate(time: number, position: number): void;
 
-        const endAngle = opts.endAngle
-        const startAngle = opts.startAngle ?? endAngle
+    rotate(...args:
+              [Easing, number, number, number, number] |
+              [number, number, number, number] |
+              [Easing, number, number] |
+              [number, number]
+    ) {
+        let startAngle, endAngle: Float;
+        let startTime, endTime: number;
+        let easing: Easing;
 
-        const easing = opts.easing ?? Easing.Linear;
+        switch (args.length) {
+            case 2:
+                endTime = args[0];
+                startTime = this._rotateTimeline?.lastCommand?.endTime ?? endTime;
+                endAngle = new Float(args[1]);
+                startAngle = (this._rotateTimeline?.lastCommand as RotateCommand | undefined)?.endAngle ?? endAngle;
+                easing = Easing.Linear;
+                break;
+            case 3:
+                endTime = args[1];
+                startTime = this._rotateTimeline?.lastCommand?.endTime ?? endTime;
+                endAngle = new Float(args[2]);
+                startAngle = (this._rotateTimeline?.lastCommand as RotateCommand | undefined)?.endAngle ?? endAngle;
+                easing = args[0];
+                break;
+            case 4:
+                startTime = args[0];
+                endTime = args[1];
+                startAngle = new Float(args[2]);
+                endAngle = new Float(args[3]);
+                easing = Easing.Linear;
+                break;
+            case 5:
+                easing = args[0];
+                startTime = args[1];
+                endTime = args[2];
+                startAngle = new Float(args[3]);
+                endAngle = new Float(args[4]);
+                break;
+            default:
+                throw Error('Incorrect number of arguments')
+        }
 
-        this.rotateTimeline.addCommand(new RotateCommand(easing, startTime, endTime, new Float(startAngle), new Float(endAngle)))
+        this.rotateTimeline.addCommand(new RotateCommand(easing, startTime, endTime, startAngle, endAngle))
     }
 
-    fade(opts: FadeOptions) {
-        const endTime = opts.endTime
-        const startTime = opts.startTime ?? endTime
+    fade(easing: Easing, startTime: number, endTime: number, startAlpha: number, endAlpha: number): void;
+    fade(startTime: number, endTime: number, startAlpha: number, endAlpha: number): void;
+    fade(easing: Easing, time: number, position: number): void;
+    fade(time: number, position: number): void;
 
-        const endAlpha = opts.endAlpha
-        const startAlpha = opts.startAlpha ?? endAlpha
+    fade(...args:
+               [Easing, number, number, number, number] |
+               [number, number, number, number] |
+               [Easing, number, number] |
+               [number, number]
+    ) {
+        let startAlpha, endAlpha: Float;
+        let startTime, endTime: number;
+        let easing: Easing;
 
-        const easing = opts.easing ?? Easing.Linear;
+        switch (args.length) {
+            case 2:
+                endTime = args[0];
+                startTime = this._fadeTimeline?.lastCommand?.endTime ?? endTime;
+                endAlpha = new Float(args[1]);
+                startAlpha = (this._fadeTimeline?.lastCommand as FadeCommand | undefined)?.endAlpha ?? endAlpha;
+                easing = Easing.Linear;
+                break;
+            case 3:
+                endTime = args[1];
+                startTime = this._fadeTimeline?.lastCommand?.endTime ?? endTime;
+                endAlpha = new Float(args[2]);
+                startAlpha = (this._fadeTimeline?.lastCommand as FadeCommand | undefined)?.endAlpha ?? endAlpha;
+                easing = args[0];
+                break;
+            case 4:
+                startTime = args[0];
+                endTime = args[1];
+                startAlpha = new Float(args[2]);
+                endAlpha = new Float(args[3]);
+                easing = Easing.Linear;
+                break;
+            case 5:
+                easing = args[0];
+                startTime = args[1];
+                endTime = args[2];
+                startAlpha = new Float(args[3]);
+                endAlpha = new Float(args[4]);
+                break;
+            default:
+                throw Error('Incorrect number of arguments')
+        }
 
-        this.fadeTimeline.addCommand(new FadeCommand(easing, startTime, endTime, new Float(startAlpha), new Float(endAlpha)))
+        this.fadeTimeline.addCommand(new FadeCommand(easing, startTime, endTime, startAlpha, endAlpha))
     }
 
-    color(opts: ColorOptions) {
-        const endTime = opts.endTime
-        const startTime = opts.startTime ?? endTime
+    color(easing: Easing, startTime: number, endTime: number, startColor: Color, endColor: Color): void;
+    color(startTime: number, endTime: number, startColor: Color, endColor: Color): void;
+    color(easing: Easing, time: number, color: Color): void;
+    color(time: number, color: Color): void;
 
-        const endColor = opts.endColor
-        const startColor = opts.startColor ?? endColor
+    color(...args:
+             [Easing, number, number, Color, Color] |
+             [number, number, Color, Color] |
+             [Easing, number, Color] |
+             [number, Color]
+    ) {
+        let startColor, endColor: Color;
+        let startTime, endTime: number;
+        let easing: Easing;
 
-        const easing = opts.easing ?? Easing.Linear;
+        switch (args.length) {
+            case 2:
+                endTime = args[0];
+                startTime = this._colorTimeline?.lastCommand?.endTime ?? endTime;
+                endColor = args[1];
+                startColor = (this._colorTimeline?.lastCommand as ColorCommand | undefined)?.endColor ?? endColor;
+                easing = Easing.Linear;
+                break;
+            case 3:
+                endTime = args[1];
+                startTime = this._colorTimeline?.lastCommand?.endTime ?? endTime;
+                endColor = args[2];
+                startColor = (this._colorTimeline?.lastCommand as ColorCommand | undefined)?.endColor ?? endColor;
+                easing = args[0];
+                break;
+            case 4:
+                startTime = args[0];
+                endTime = args[1];
+                startColor = args[2];
+                endColor = args[3];
+                easing = Easing.Linear;
+                break;
+            case 5:
+                easing = args[0];
+                startTime = args[1];
+                endTime = args[2];
+                startColor = args[3];
+                endColor = args[4];
+                break;
+            default:
+                throw Error('Incorrect number of arguments')
+        }
 
         this.colorTimeline.addCommand(new ColorCommand(easing, startTime, endTime, startColor, endColor))
     }
@@ -193,34 +427,34 @@ export class SBElement {
     isVisibleAt(time: number = 0) {
         if (this._sprite < 0 || this.hasNoAnimation)
             return true;
-        if (time >= this.moveTimeline.startTime && time <= this.moveTimeline.endTime)
+        if (this._moveTimeline && time >= this._moveTimeline.startTime && time <= this._moveTimeline.endTime)
             return true
-        if (time >= this.moveXTimeline.startTime && time <= this.moveXTimeline.endTime)
+        if (this._moveXTimeline && time >= this._moveXTimeline.startTime && time <= this._moveXTimeline.endTime)
             return true
-        if (time >= this.moveYTimeline.startTime && time <= this.moveYTimeline.endTime)
+        if (this._moveYTimeline && time >= this._moveYTimeline.startTime && time <= this._moveYTimeline.endTime)
             return true
-        if (time >= this.scaleTimeline.startTime && time <= this.scaleTimeline.endTime)
+        if (this._scaleTimeline && time >= this._scaleTimeline.startTime && time <= this._scaleTimeline.endTime)
             return true
-        if (time >= this.scaleVecTimeline.startTime && time <= this.scaleVecTimeline.endTime)
+        if (this._scaleVecTimeline && time >= this._scaleVecTimeline.startTime && time <= this._scaleVecTimeline.endTime)
             return true
-        if (time >= this.rotateTimeline.startTime && time <= this.rotateTimeline.endTime)
+        if (this._rotateTimeline && time >= this._rotateTimeline.startTime && time <= this._rotateTimeline.endTime)
             return true
-        if (time >= this.fadeTimeline.startTime && time <= this.fadeTimeline.endTime)
+        if (this._fadeTimeline && time >= this._fadeTimeline.startTime && time <= this._fadeTimeline.endTime)
             return true
-        if (time >= this.colorTimeline.startTime && time <= this.colorTimeline.endTime)
+        if (this._colorTimeline && time >= this._colorTimeline.startTime && time <= this._colorTimeline.endTime)
             return true
         return false
     }
 
     get hasNoAnimation() {
-        return !this.moveTimeline.hasCommands &&
-            !this.moveXTimeline.hasCommands &&
-            !this.moveYTimeline.hasCommands &&
-            !this.scaleTimeline.hasCommands &&
-            !this.scaleVecTimeline.hasCommands &&
-            !this.rotateTimeline.hasCommands &&
-            !this.fadeTimeline.hasCommands &&
-            !this.colorTimeline.hasCommands
+        return !this._moveTimeline?.hasCommands &&
+            !this._moveXTimeline?.hasCommands &&
+            !this._moveYTimeline?.hasCommands &&
+            !this._scaleTimeline?.hasCommands &&
+            !this._scaleVecTimeline?.hasCommands &&
+            !this._rotateTimeline?.hasCommands &&
+            !this._fadeTimeline?.hasCommands &&
+            !this._colorTimeline?.hasCommands
     }
 
     getColor(time: number = 0): Color {
@@ -284,17 +518,7 @@ export class SBElement {
             el.colorTimeline.commandList.forEach(command => this.colorTimeline.addCommand(command))
     }
 
-    getTransform(time: number) {
-        const transform = new Matrix().identity()
 
-        const pos = this.getPos(time)
-        const scale = this.getScale(time)
-        transform.scale(scale.x, scale.y)
-        transform.rotate(this.getRotation(time))
-        transform.translate(pos.x, pos.y)
-
-        return transform
-    }
 
     commandCountAt(time: number) {
         let count = 0
@@ -410,53 +634,4 @@ export enum SBElementType {
     Point,
     Sprite,
     Animation,
-}
-
-interface MoveOptions {
-    easing?: Easing
-    startTime?: number
-    endTime: number
-    startPos?: Vec2
-    endPos: Vec2
-}
-
-interface ScaleOptions {
-    easing?: Easing
-    startTime?: number
-    endTime: number
-    startScale?: number
-    endScale: number
-}
-
-interface ScaleVecOptions {
-    easing?: Easing
-    startTime?: number
-    endTime: number
-    startScale?: Vec2
-    endScale: Vec2
-}
-
-interface RotateOptions {
-    easing?: Easing
-    startTime?: number
-    endTime: number
-    startAngle?: number
-    endAngle: number
-}
-
-
-interface FadeOptions {
-    easing?: Easing
-    startTime?: number
-    endTime: number
-    startAlpha?: number
-    endAlpha: number
-}
-
-interface ColorOptions {
-    easing?: Easing
-    startTime?: number
-    endTime: number
-    startColor?: Color
-    endColor: Color
 }

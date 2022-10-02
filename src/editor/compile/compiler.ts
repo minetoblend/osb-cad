@@ -8,6 +8,8 @@ import {transformAttributes} from "@/editor/compile/transform.attribute";
 import {transformGlobals} from "@/editor/compile/transform.global";
 import {transformFunctions} from "@/editor/compile/transform.functions";
 import {transformAddSprite} from "@/editor/compile/transform.add";
+import {transformUtils} from "@/editor/compile/transform.utils";
+import {transformCommands} from "@/editor/compile/transform.commands";
 
 export class Compiler {
     private attributes: Map<string, AttributeMetadata>;
@@ -98,6 +100,8 @@ export class Compiler {
                     //sprite operations
                     transformAddSprite(path, defaultGeoIdentifier)
                     transformDeleteSprite(path, this.ctxIdentifier, defaultGeoIdentifier)
+                    transformUtils(path, this.ctxIdentifier)
+                    transformCommands(path, currentElementIdentifier)
 
                     path.pushContainer('body', [
                         types.returnStatement(defaultGeoIdentifier)

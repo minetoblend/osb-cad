@@ -13,9 +13,37 @@ const globalPattern = new RegExp('_([a-zA-Z0-9_]+)', 'g');
 
 //@ts-ignore
 import commonTypes from '!raw-loader!./common.types.d.ts';
+import {EditorContext} from "@/editor/ctx/context";
+
+let editorContext: EditorContext | undefined = undefined;
+
+export function setEditorExtensionContext(context: EditorContext) {
+    editorContext = context
+}
 
 export function initEditorExtension() {
     monaco.languages.typescript.javascriptDefaults.addExtraLib(commonTypes, 'ts:filename/common.d.ts')
+
+    monaco.languages.registerCompletionItemProvider('javascript', {
+        provideCompletionItems: (model, position, context, token) => {
+            if (!editorContext)
+                return {suggestions: []}
+            const word = model.getWordUntilPosition(position);
+            const range = new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn)
+
+            return {
+                suggestions: [
+                    {
+                        label: 'Current Time',
+                        description: 'Inserts the editor\'s current timestamp',
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        insertText: `${Math.floor(editorContext.time.value)}`,
+                        range,
+                    }
+                ]
+            }
+        }
+    })
 
     monaco.languages.registerDocumentSemanticTokensProvider('javascript', {
         getLegend() {

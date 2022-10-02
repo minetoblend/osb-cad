@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js'
-import {MIPMAP_MODES, MSAA_QUALITY, SCALE_MODES, WRAP_MODES} from 'pixi.js'
+import {ALPHA_MODES, MIPMAP_MODES, MSAA_QUALITY, SCALE_MODES, WRAP_MODES} from 'pixi.js'
 import {EditorContext} from "@/editor/ctx/context";
 import {NodeDependencyType} from "@/editor/compile";
 import * as path from "path";
@@ -41,7 +41,8 @@ export class FileStore {
                     scaleMode: SCALE_MODES.NEAREST,
                     mipmap: MIPMAP_MODES.OFF,
                     wrapMode: WRAP_MODES.MIRRORED_REPEAT,
-                    multisample: MSAA_QUALITY.NONE
+                    multisample: MSAA_QUALITY.NONE,
+                    alphaMode: ALPHA_MODES.PREMULTIPLY_ALPHA,
                 })
 
                 this.textureMap.set(path.relative(mapsetPath, filepath), this.textures.length)

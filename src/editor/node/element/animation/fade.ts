@@ -38,14 +38,13 @@ export class FadeNode extends ElementNode {
         const endAlpha = this.param('endAlpha')!
 
         geo.forEach((idx, el) => {
-
-            el.fade({
-                startTime: startTime.getWithElement({idx, el, geo: [geo]}),
-                endTime: endTime.getWithElement({idx, el, geo: [geo]}),
-                startAlpha: startAlpha.getWithElement({idx, el, geo: [geo]}),
-                endAlpha: endAlpha.getWithElement({idx, el, geo: [geo]}),
-                easing: Easing.QuadOut,
-            })
+            el.fade(
+                Easing.QuadOut,
+                startTime.getWithElement({idx, el, geo: [geo]}),
+                endTime.getWithElement({idx, el, geo: [geo]}),
+                startAlpha.getWithElement({idx, el, geo: [geo]}),
+                endAlpha.getWithElement({idx, el, geo: [geo]}),
+            )
         })
 
         return CookResult.success(geo);
@@ -103,21 +102,21 @@ export class FadeInOutNode extends ElementNode {
             const end = endTime.getWithElement({idx, el, geo: [geo]})
             const peakAlpha = alpha.getWithElement({idx, el, geo: [geo]})
 
-            el.fade({
-                startTime: start,
-                endTime: start + duration,
-                startAlpha: 0,
-                endAlpha: peakAlpha,
-                easing: Easing.Linear,
-            })
+            el.fade(
+                Easing.Linear,
+                start,
+                start + duration,
+                0,
+                peakAlpha,
+            )
 
-            el.fade({
-                startTime: end - duration,
-                endTime: end,
-                startAlpha: peakAlpha,
-                endAlpha: 0,
-                easing: Easing.Linear,
-            })
+            el.fade(
+                Easing.Linear,
+                end - duration,
+                end,
+                peakAlpha,
+                0,
+            )
         })
 
         return CookResult.success(geo);

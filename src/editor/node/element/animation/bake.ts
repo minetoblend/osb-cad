@@ -70,44 +70,43 @@ export class BakeAnimationNode extends ElementNode {
                     return;
 
                 if (!sprite._pos.equals(lastSprite._pos)) {
-                    bakedSprite.move({
-                        startTime: lastTime,
-                        endTime: time,
-                        startPos: lastSprite._pos,
-                        endPos: sprite._pos,
-                        easing: Easing.Linear
-                    })
+                    bakedSprite.move(Easing.Linear,
+                        lastTime,
+                        time,
+                        lastSprite._pos,
+                        sprite._pos
+                    )
                 }
 
                 if (!sprite._scale.equals(lastSprite._scale)) {
-                    bakedSprite.scaleVec({
-                        startTime: lastTime,
-                        endTime: time,
-                        startScale: lastSprite._scale,
-                        endScale: sprite._scale,
-                        easing: Easing.Linear
-                    })
+                    bakedSprite.scaleVec(
+                        Easing.Linear,
+                        lastTime,
+                        time,
+                        lastSprite._scale,
+                        sprite._scale,
+                    )
                 }
 
                 if (sprite._rotation !== lastSprite._rotation) {
-                    bakedSprite.rotate({
-                        startTime: lastTime,
-                        endTime: time,
-                        startAngle: lastSprite._rotation,
-                        endAngle: sprite._rotation,
-                        easing: Easing.Linear
-                    })
+                    bakedSprite.rotate(
+                        Easing.Linear,
+                        lastTime,
+                        time,
+                        lastSprite._rotation,
+                        sprite._rotation,
+                    )
                 }
 
 
                 if (sprite._alpha !== lastSprite._alpha) {
-                    bakedSprite.fade({
-                        startTime: lastTime,
-                        endTime: time,
-                        startAlpha: lastSprite._alpha,
-                        endAlpha: sprite._alpha,
-                        easing: Easing.Linear
-                    })
+                    bakedSprite.fade(
+                        Easing.Linear,
+                        lastTime,
+                        time,
+                        lastSprite._alpha,
+                        sprite._alpha,
+                    )
                 }
 
 

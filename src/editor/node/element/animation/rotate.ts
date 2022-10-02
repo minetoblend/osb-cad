@@ -36,13 +36,13 @@ export class RotateNode extends ElementNode {
 
         geo.forEach((idx, el) => {
 
-            el.rotate({
-                startTime: startTime.getWithElement({idx, el, geo: [geo]}),
-                endTime: endTime.getWithElement({idx, el, geo: [geo]}),
-                startAngle: startAngle.getWithElement({idx, el, geo: [geo]}) / 180 * Math.PI,
-                endAngle: endAngle.getWithElement({idx, el, geo: [geo]}) / 180 * Math.PI,
-                easing: Easing.QuadOut,
-            })
+            el.rotate(
+                Easing.Linear,
+                startTime.getWithElement({idx, el, geo: [geo]}),
+                endTime.getWithElement({idx, el, geo: [geo]}),
+                startAngle.getWithElement({idx, el, geo: [geo]}) / 180 * Math.PI,
+                endAngle.getWithElement({idx, el, geo: [geo]}) / 180 * Math.PI,
+            )
         })
 
         return CookResult.success(geo);

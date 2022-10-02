@@ -22,6 +22,7 @@ import {useDevtools} from "@/devtools";
 import {CustomInspectorNode} from "@vue/devtools-api";
 import {EditorObject} from "@/editor/ctx/editorObject";
 import {CookManager} from "@/editor/cook/context";
+import {setEditorExtensionContext} from "@/lang/editor.extension";
 
 export class EditorContext {
 
@@ -70,6 +71,8 @@ export class EditorContext {
         requestAnimationFrame(() => this.update())
 
         this.setupDevtools()
+
+        setEditorExtensionContext(this)
     }
 
     readonly lastUpdate = ref(performance.now())

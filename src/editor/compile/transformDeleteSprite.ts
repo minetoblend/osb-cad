@@ -16,9 +16,9 @@ export function transformDeleteSprite(path: NodePath<BlockStatement>, ctxIdentif
     path.traverse({
         CallExpression: path => {
             if (path.node.callee.type === 'Identifier') {
-                hasDelete = true
                 const node = path.node.callee as Identifier
                 if (node.name === 'deleteSprite') {
+                    hasDelete = true
                     if (path.node.arguments.length !== 1) {
                         throw new Error("Invalid arguments")
                     }

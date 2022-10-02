@@ -7,6 +7,9 @@ import {NodeInput} from "@/editor/node/input";
 import {SBCollection} from "@/editor/objects/collection";
 import {globalFunctions, NodeDependencyType} from "@/editor/compile";
 import TypedFastBitSet from "typedfastbitset";
+import {Origin} from '@/editor/objects/origin'
+import {Vec2, Color} from '@/util/math'
+import {Easing} from '@/editor/objects/easing'
 
 export class CookManager {
 
@@ -208,6 +211,10 @@ export class CookJobContext {
     }
 
     readonly utils = {
-        BitSet: TypedFastBitSet
+        BitSet: TypedFastBitSet,
+        Vec2,
+        Color,
+        Easing,
+        Origin,
     }
 }

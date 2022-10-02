@@ -58,6 +58,8 @@ export class CopyToPointsNode extends ElementNode {
                     copy.setAttribute(timingAttributeName, index1, value)
                 }
 
+                el1._alpha *= el._alpha
+
                 el1.applyAnimationFrom(el)
             })
 

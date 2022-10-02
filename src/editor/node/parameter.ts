@@ -337,7 +337,7 @@ export class CodeNodeParameter extends NodeParameter {
             lines.push(`function setAttrib(name: '${attribute.name}', idx: number, value: ${expandedType}): void;`)
         })
 
-        lines.push('}f')
+        lines.push('}')
 
         this.cachedTypeDefs.value = lines.join('\n')
         this.typesChanged.value = false

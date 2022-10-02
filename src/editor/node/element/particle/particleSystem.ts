@@ -14,6 +14,7 @@ import {NodeDependency} from "@/editor/node/dependency";
 import {animationFrameAsPromise} from "@/util/promise";
 import {LastFrameNode} from "@/editor/node/element/particle/input";
 import {CookJobContext} from "@/editor/cook/context";
+import {shallowRef} from "vue";
 
 @RegisterNode('ParticleSystem', ['fas', 'explosion'], 'objects')
 export class ParticleSystem extends NodeSystem<SimulationNode> {
@@ -40,7 +41,7 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
     markDirty(reason?: MarkDirtyReason, visited: Set<Node> = new Set<Node>()): void {
         super.markDirty(reason, visited);
         if (reason?.expressionDependency !== NodeDependencyType.Time) {
-            this.simulationDirty = true
+            this.simulationCache.value = []
         }
     }
 
@@ -68,48 +69,52 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
         }
     }
 
-    simulationDirty = true
-    simulationCache: SimulationCachedFrame[] = []
+    simulationCache = shallowRef<SimulationCachedFrame[]>([])
 
     cooking?: Promise<void>
+
+    lastUpdate = performance.now()
 
     async cook(ctx: CookJobContext): Promise<CookResult> {
         if (this.cooking)
             await this.cooking;
 
-        const startTime = this.param('startTime')!.get()
+        let startTime = this.param('startTime')!.get()
         const endTime = this.param('endTime')!.get()
         const interval = this.param('interval')!.get()
 
         if (ctx.time < startTime || ctx.time > endTime)
             return CookResult.success(new SBCollection())
 
-        if (!this.simulationDirty) {
-            let {index, found} = this.findCacheIndex(ctx.time)
-            if (!found)
-                index--
-
-            return CookResult.success(this.simulationCache[index].geometry)
-        }
-
         if (!this.outputNode.value)
             return CookResult.success(new SBCollection())
 
         const outputNode = this.getNode(this.outputNode.value!)!
-        const simulation: SimulationCachedFrame[] = []
+        const simulation = this.simulationCache.value
 
         let onFinish: Function = () => {
         };
         this.cooking = new Promise(resolve => onFinish = resolve)
-        await animationFrameAsPromise()
 
-        console.log('resimulating particle system')
+        let lastTime = startTime - interval
 
-        let lastTime = startTime
-        for (let time = startTime; time < endTime + interval; time += interval) {
+        if (this.simulationCache.value.length > 0) {
+            startTime = this.simulationCache.value[this.simulationCache.value.length - 1].time + interval
+            lastTime = startTime = this.simulationCache.value[this.simulationCache.value.length - 1].time
+        }
+
+
+        this.lastUpdate = performance.now()
+
+        for (let time = startTime; time < endTime + interval && time < ctx.time; time += interval) {
             time = Math.min(time, endTime)
 
             const lastFrame = simulation[simulation.length - 1]?.geometry ?? new SBCollection()
+
+            if (performance.now() > this.lastUpdate + 200) {
+                await animationFrameAsPromise()
+                this.lastUpdate = performance.now()
+            }
 
             ctx.provide('lastFrame', lastFrame)
 
@@ -127,8 +132,7 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
             lastTime = time
         }
 
-        this.simulationDirty = false
-        this.simulationCache = simulation
+        this.simulationCache.value = [...simulation]
 
         let {index, found} = this.findCacheIndex(ctx.time)
         if (!found)
@@ -137,16 +141,16 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
         this.cooking = undefined
         onFinish();
 
-        return CookResult.success(this.simulationCache[index].geometry)
+        return CookResult.success(this.simulationCache.value[index].geometry)
     }
 
     private findCacheIndex(time: number): { found: boolean, index: number } {
         let index = 0
         let left = 0;
-        let right = this.simulationCache.length - 1;
+        let right = this.simulationCache.value.length - 1;
         while (left <= right) {
             index = left + ((right - left) >> 1);
-            let commandTime = this.simulationCache[index].time;
+            let commandTime = this.simulationCache.value[index].time;
             if (commandTime == time)
                 return {found: true, index};
             else if (commandTime < time)
@@ -163,7 +167,12 @@ export class ParticleSystem extends NodeSystem<SimulationNode> {
 
     get timingInformation(): TimingInformation | undefined {
         const start = this.param('startTime')!.get()
-        const end = this.param('endTime')!.get()
+        let end = start //this.param('endTime')!.get()
+
+        if (this.simulationCache.value.length) {
+            end = this.simulationCache.value[this.simulationCache.value.length - 1].time
+        }
+
         return {
             type: "animation",
             startTime: start,

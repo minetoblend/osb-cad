@@ -10,7 +10,7 @@ export function transformAddSprite(path: NodePath<BlockStatement>, geoIdentifier
     path.traverse({
         CallExpression: path => {
             if (path.node.callee.type === 'Identifier') {
-                const node = path.node.callee as Identifier
+                    const node = path.node.callee as Identifier
                 if (node.name === 'addSprite') {
 
                     path.replaceWith(addSpriteTemplate({

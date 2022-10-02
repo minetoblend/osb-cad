@@ -35,13 +35,13 @@ export class ColorNode extends ElementNode {
 
         geo.forEach((idx, el) => {
 
-            el.color({
-                startTime: startTime.getWithElement({idx, el, geo: [geo]}),
-                endTime: endTime.getWithElement({idx, el, geo: [geo]}),
-                startColor: this.chc('startColor', {idx, el, geo: [geo]}),
-                endColor: this.chc('endColor', {idx, el, geo: [geo]}),
-                easing: Easing.QuadOut,
-            })
+            el.color(
+                Easing.QuadOut,
+                startTime.getWithElement({idx, el, geo: [geo]}),
+                endTime.getWithElement({idx, el, geo: [geo]}),
+                this.chc('startColor', {idx, el, geo: [geo]}),
+                this.chc('endColor', {idx, el, geo: [geo]}),
+            )
         })
 
         return CookResult.success(geo);

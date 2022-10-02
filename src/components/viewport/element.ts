@@ -2,6 +2,7 @@ import * as PIXI from 'pixi.js'
 import {SBElement, SBElementType} from "@/editor/objects";
 import {EditorContext} from "@/editor/ctx/context";
 import {Origin} from "@/editor/objects/origin";
+import {BLEND_MODES} from "pixi.js";
 
 const pointGraphics = new PIXI.Graphics()
 pointGraphics.beginFill(0xffffff)
@@ -68,7 +69,7 @@ export class StoryboardElementContainer extends PIXI.Container {
 
 
         if (this.sprite) {
-            //this.sprite.blendMode = BLEND_MODES.ADD
+            this.sprite.blendMode = BLEND_MODES.ADD
 
             const sprite = this.sprite
             switch (this.element._origin) {

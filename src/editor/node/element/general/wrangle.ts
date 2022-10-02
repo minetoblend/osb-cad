@@ -60,6 +60,7 @@ export class SpriteWrangleNode extends ElementNode {
 
                 const result = await compiledCode.run(ctx, prefetched)
 
+
                 if (result instanceof SBCollection)
                     return CookResult.success(result)
 

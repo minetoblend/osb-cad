@@ -37,13 +37,12 @@ export class ScaleNode extends ElementNode {
 
         geo.forEach((idx, el) => {
 
-            el.scale({
-                startTime: startTime.getWithElement({idx, el, geo: [geo]}),
-                endTime: endTime.getWithElement({idx, el, geo: [geo]}),
-                startScale: startScale.getWithElement({idx, el, geo: [geo]}),
-                endScale: endScale.getWithElement({idx, el, geo: [geo]}),
-                easing: Easing.BackOut,
-            })
+            el.scale(Easing.Linear,
+                startTime.getWithElement({idx, el, geo: [geo]}),
+                endTime.getWithElement({idx, el, geo: [geo]}),
+                startScale.getWithElement({idx, el, geo: [geo]}),
+                endScale.getWithElement({idx, el, geo: [geo]}),
+            )
         })
 
         return CookResult.success(geo);
