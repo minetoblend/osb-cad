@@ -78,6 +78,10 @@ const menuItems = reactive([
         name: 'Close'
       },
       {isDivider: true},
+      {
+        name: 'Export storyboard'
+      },
+      {isDivider: true},
       diffSelectMenu
     ],
   },
@@ -131,10 +135,17 @@ async function onCommandSelected({name, path}: { name: string, path: string }) {
   if (path === 'edit>undo') {
     props.ctx.history.undo()
   }
-  if (path === 'edit>redp') {
+  if (path === 'edit>redo') {
     props.ctx.history.redo()
   }
-
+  if (path === 'file>export storyboard') {
+    loading.value = true
+    try {
+      await props.ctx.exportStoryboard()
+    } catch (e) {
+    }
+    loading.value = false
+  }
 }
 
 

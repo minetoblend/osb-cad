@@ -20,9 +20,9 @@ import {AudioEngine} from "@/editor/audio";
 import * as path from "path";
 import {useDevtools} from "@/devtools";
 import {CustomInspectorNode} from "@vue/devtools-api";
-import {EditorObject} from "@/editor/ctx/editorObject";
 import {CookManager} from "@/editor/cook/context";
 import {setEditorExtensionContext} from "@/lang/editor.extension";
+import {serializeSBCollection} from "@/editor/objects/serialize";
 
 export class EditorContext {
 
@@ -256,15 +256,26 @@ export class EditorContext {
         return res
     }
 
-    getChild(name: string): EditorObject | undefined {
-        return this.root.value.getChild(name)
-    }
+    async exportStoryboard() {
+        if (this.currentGeometry.value) {
+            const lines = [...serializeSBCollection(this.currentGeometry.value, this)]
+            const fileContents = lines.join('\n')
 
-    getParent(): EditorObject | undefined {
-        return undefined
-    }
+            const regex = new RegExp('^(.+ - .+ \\(.+\\)) \\[.+\\].osu', 'g')
 
-    canEvaluate(): boolean {
-        return false
+            let exportFilename = 'storyboard.osb'
+
+            const files = await electronAPI.readDir(this.mapsetPath.value)
+
+            for (let filename of files) {
+                if (filename.endsWith('.osu')) {
+                    for (let match = null; (match = regex.exec(filename));) {
+                        exportFilename = `${match[1]}.osb`
+                    }
+                }
+
+            }
+            await electronAPI.writeFile(path.join(this.mapsetPath.value, exportFilename), fileContents)
+        }
     }
 }

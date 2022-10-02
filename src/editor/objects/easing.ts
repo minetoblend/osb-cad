@@ -1,7 +1,7 @@
 export enum Easing {
     Linear = 0,
 
-    QuadIn,
+    QuadIn = 3,
     QuadOut,
     QuadInOut,
 
@@ -29,6 +29,12 @@ export enum Easing {
     CircOut,
     CircInOut,
 
+    ElasticIn,
+    ElasticOut,
+    ElasticOutHalf,
+    ElasticOutQuarter,
+    ElasticInOut,
+
     BackIn,
     BackOut,
     BackInOut,
@@ -36,12 +42,6 @@ export enum Easing {
     BounceIn,
     BounceOut,
     BounceInOut,
-
-    ElasticIn,
-    ElasticOut,
-    ElasticOutHalf,
-    ElasticOutQuarter,
-    ElasticInOut,
 }
 
 type EasingFunction = ((x: number) => number);

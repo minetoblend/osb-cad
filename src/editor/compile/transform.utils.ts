@@ -11,7 +11,7 @@ export function transformUtils(path: NodePath<BlockStatement>, ctx: Identifier) 
             if (path.node.object.type === 'Identifier' && path.node.property.type === 'Identifier') {
                 const object = path.node.object as Identifier
 
-                if (['Easing', 'Vec2', 'Color'].includes(object.name)) {
+                if (['Easing', 'Vec2', 'Color', 'Origin'].includes(object.name)) {
                     path.get('object').replaceWith(utilsTemplate({
                         ctx,
                         util: object

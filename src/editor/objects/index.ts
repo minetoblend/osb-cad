@@ -262,10 +262,10 @@ export class SBElement {
     rotate(time: number, position: number): void;
 
     rotate(...args:
-              [Easing, number, number, number, number] |
-              [number, number, number, number] |
-              [Easing, number, number] |
-              [number, number]
+               [Easing, number, number, number, number] |
+               [number, number, number, number] |
+               [Easing, number, number] |
+               [number, number]
     ) {
         let startAngle, endAngle: Float;
         let startTime, endTime: number;
@@ -313,10 +313,10 @@ export class SBElement {
     fade(time: number, position: number): void;
 
     fade(...args:
-               [Easing, number, number, number, number] |
-               [number, number, number, number] |
-               [Easing, number, number] |
-               [number, number]
+             [Easing, number, number, number, number] |
+             [number, number, number, number] |
+             [Easing, number, number] |
+             [number, number]
     ) {
         let startAlpha, endAlpha: Float;
         let startTime, endTime: number;
@@ -364,10 +364,10 @@ export class SBElement {
     color(time: number, color: Color): void;
 
     color(...args:
-             [Easing, number, number, Color, Color] |
-             [number, number, Color, Color] |
-             [Easing, number, Color] |
-             [number, Color]
+              [Easing, number, number, Color, Color] |
+              [number, number, Color, Color] |
+              [Easing, number, Color] |
+              [number, Color]
     ) {
         let startColor, endColor: Color;
         let startTime, endTime: number;
@@ -519,7 +519,6 @@ export class SBElement {
     }
 
 
-
     commandCountAt(time: number) {
         let count = 0
         let overlapping = 0
@@ -627,6 +626,20 @@ export class SBElement {
                 if (this.s._colorTimeline) yield this.s._colorTimeline
             }
         }
+    }
+
+    get layer() {
+        return 0;
+    }
+
+    getAllCommands() {
+        const commands: SpriteCommand<any>[] = []
+
+        for (const timeline of this.timelines) {
+            commands.push(...timeline.commandList)
+        }
+
+        return commands
     }
 }
 

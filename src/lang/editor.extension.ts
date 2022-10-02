@@ -12,7 +12,7 @@ const attributePattern = new RegExp('([fivg])?\\$([a-zA-Z0-9_]+)', 'g');
 const globalPattern = new RegExp('_([a-zA-Z0-9_]+)', 'g');
 
 //@ts-ignore
-import commonTypes from '!raw-loader!./common.types.d.ts';
+import commonTypes from '!raw-loader!./common.types.d.ts.txt';
 import {EditorContext} from "@/editor/ctx/context";
 
 let editorContext: EditorContext | undefined = undefined;
